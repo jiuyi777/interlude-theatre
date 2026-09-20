@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="umbrella-spring-violet-title umbrella-spring-violet-desc">
+  <title id="umbrella-spring-violet-title">雨中伞 · 春日藤紫</title>
+  <desc id="umbrella-spring-violet-desc">展开雨伞、雨滴和水洼波纹组成雨夜场景，使用春日藤紫深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="umbrella-spring-violet-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4E456C"/><stop offset=".58" stop-color="#8B79B4"/><stop offset="1" stop-color="#B5A5D9"/></linearGradient>
+    <linearGradient id="umbrella-spring-violet-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F6E8CF"/><stop offset=".42" stop-color="#F0D8BD"/><stop offset=".72" stop-color="#C3CFB1"/><stop offset="1" stop-color="#F0D8BD"/></linearGradient>
+    <linearGradient id="umbrella-spring-violet-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F6E8CF"/><stop offset="1" stop-color="#F0D8BD"/></linearGradient>
+    <radialGradient id="umbrella-spring-violet-glow"><stop stop-color="#F6E8CF" stop-opacity=".5"/><stop offset=".32" stop-color="#F0D8BD" stop-opacity=".22"/><stop offset="1" stop-color="#F0D8BD" stop-opacity="0"/></radialGradient>
+    <pattern id="umbrella-spring-violet-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#F6E8CF" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="umbrella-spring-violet-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1A1724" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#umbrella-spring-violet-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#umbrella-spring-violet-grain)" stroke="#F0D8BD" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#F6E8CF" stroke-opacity=".22"/>
+  <g fill="none" stroke="#F0D8BD" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#F0D8BD"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#umbrella-spring-violet-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#1A1724" stroke="url(#umbrella-spring-violet-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#8B79B4" stroke="#C3CFB1" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#umbrella-spring-violet-bg)"/><g stroke="#F6E8CF" stroke-width="2" stroke-linecap="round" opacity=".65"><path d="m56 62-7 16M82 50l-7 16M108 63l-7 16M141 49l-7 16M173 62l-7 16M194 47l-7 16"/></g>
+    <path d="M58 142c14-45 40-67 78-67s64 22 78 67c-13-8-26-8-39 0-13-8-26-8-39 0-13-8-26-8-39 0-13-8-26-8-39 0Z" fill="#C3CFB1" stroke="#F6E8CF" stroke-width="3"/><path d="M136 77v106c0 27-28 31-38 10" fill="none" stroke="#F0D8BD" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="136" cy="218" rx="67" ry="12" fill="none" stroke="#F0D8BD" stroke-width="3"/><ellipse cx="136" cy="218" rx="39" ry="7" fill="none" stroke="#F6E8CF" stroke-opacity=".55" stroke-width="2"/>
+  <path d="M22 246h196v38H22Z" fill="#8B79B4" stroke="#F0D8BD" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#F0D8BD" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#B5A5D9" stroke="#F0D8BD" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#F6E8CF"/>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="window-plum-title window-plum-desc">
+  <title id="window-plum-title">夜窗 · 夜梅紫</title>
+  <desc id="window-plum-desc">从旧窗望向月夜城市与远处灯火，使用夜梅紫深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="window-plum-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#211721"/><stop offset=".58" stop-color="#2d1f2d"/><stop offset="1" stop-color="#56334e"/></linearGradient>
+    <linearGradient id="window-plum-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dec391"/><stop offset=".42" stop-color="#c39a60"/><stop offset=".72" stop-color="#82505c"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <linearGradient id="window-plum-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dec391"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <radialGradient id="window-plum-glow"><stop stop-color="#dec391" stop-opacity=".5"/><stop offset=".32" stop-color="#c39a60" stop-opacity=".22"/><stop offset="1" stop-color="#c39a60" stop-opacity="0"/></radialGradient>
+    <pattern id="window-plum-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#dec391" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="window-plum-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0b070c" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#window-plum-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#window-plum-grain)" stroke="#c39a60" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#dec391" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c39a60" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c39a60"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#window-plum-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#0b070c" stroke="url(#window-plum-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#2d1f2d" stroke="#82505c" stroke-width="2"/></g>
+  
+    <path d="M38 46h164v181H38Z" fill="url(#window-plum-bg)"/><circle cx="164" cy="79" r="27" fill="#dec391"/><circle cx="176" cy="68" r="25" fill="#2d1f2d"/>
+    <path d="M39 172 71 132l28 28 35-51 36 43 32-25v100H39Z" fill="#56334e"/><path d="M39 194c42-22 78-18 108 9 18-15 36-17 55-5v29H39Z" fill="#82505c"/>
+    <path d="M120 42v189M37 149h166" stroke="#c39a60" stroke-width="4"/><path d="M37 48c17 38 17 83 0 124M203 48c-17 38-17 83 0 124" fill="none" stroke="#dec391" stroke-opacity=".5" stroke-width="4"/>
+    <g fill="#dec391"><rect x="59" y="183" width="7" height="11"/><rect x="83" y="175" width="7" height="12"/><rect x="153" y="180" width="7" height="10"/><rect x="179" y="171" width="7" height="12"/></g>
+  <path d="M22 246h196v38H22Z" fill="#2d1f2d" stroke="#c39a60" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#c39a60" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#56334e" stroke="#c39a60" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#dec391"/>
+</svg>

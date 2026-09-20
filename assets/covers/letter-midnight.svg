@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="letter-midnight-title letter-midnight-desc">
+  <title id="letter-midnight-title">信件与羽笔 · 午夜蓝</title>
+  <desc id="letter-midnight-desc">羽笔、封蜡与信封组成斜置古典票券，使用午夜蓝深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="letter-midnight-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101d26"/><stop offset=".58" stop-color="#142a32"/><stop offset="1" stop-color="#283c4b"/></linearGradient>
+    <linearGradient id="letter-midnight-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dfc891"/><stop offset=".42" stop-color="#c5a25e"/><stop offset=".72" stop-color="#536879"/><stop offset="1" stop-color="#c5a25e"/></linearGradient>
+    <linearGradient id="letter-midnight-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dfc891"/><stop offset="1" stop-color="#c5a25e"/></linearGradient>
+    <radialGradient id="letter-midnight-glow"><stop stop-color="#dfc891" stop-opacity=".5"/><stop offset=".32" stop-color="#c5a25e" stop-opacity=".22"/><stop offset="1" stop-color="#c5a25e" stop-opacity="0"/></radialGradient>
+    <pattern id="letter-midnight-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#dfc891" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="letter-midnight-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#060a0d" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#letter-midnight-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#letter-midnight-grain)" stroke="#c5a25e" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#dfc891" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c5a25e" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c5a25e"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#letter-midnight-shadow)"><path d="M57 31h126l9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15H57l-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15Z" fill="#283c4b" stroke="url(#letter-midnight-gold)" stroke-width="4"/><rect x="66" y="42" width="108" height="216" rx="49" fill="#142a32" stroke="#dfc891" stroke-opacity=".55" stroke-width="2"/></g>
+  <ellipse cx="120" cy="150" rx="68" ry="108" fill="none" stroke="#c5a25e" stroke-opacity=".45"/>
+  
+    <g transform="rotate(-10 120 150)" filter="url(#letter-midnight-shadow)"><path d="M31 125h178v58h-12a10 10 0 0 0 0-20v-18a10 10 0 0 0 0-20h12v58H31v-58h12a10 10 0 0 0 0 20v18a10 10 0 0 0 0 20H31Z" fill="url(#letter-midnight-paper)" stroke="#536879" stroke-width="2"/><path d="M56 131v46M184 131v46" stroke="#283c4b" stroke-width="2" stroke-dasharray="3 4"/><path d="M67 137h106v34H67Z" fill="#283c4b" stroke="#c5a25e"/><path d="m69 139 51 34 51-34M69 169l37-26M171 169l-37-26" fill="none" stroke="#dfc891" stroke-width="2"/><circle cx="120" cy="155" r="11" fill="#536879" stroke="#dfc891" stroke-width="2"/></g>
+    <path d="M146 62c23 20 2 51-31 99-8 12-13 28-15 48" fill="none" stroke="#c5a25e" stroke-width="7"/><path d="M146 62c-3 34-17 52-42 67 1-33 15-56 42-67Z" fill="#dfc891"/>
+    <g fill="#c5a25e"><path d="m120 55 4 9 9 4-9 4-4 9-4-9-9-4 9-4Z"/><circle cx="83" cy="91" r="3"/><circle cx="159" cy="213" r="3"/></g>
+</svg>

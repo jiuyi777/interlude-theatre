@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="camera-retro-mint-title camera-retro-mint-desc">
+  <title id="camera-retro-mint-title">古董相机 · 复古薄荷红</title>
+  <desc id="camera-retro-mint-desc">双镜头相机、胶卷和取景框组成收藏卡，使用复古薄荷红深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="camera-retro-mint-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3B211C"/><stop offset=".58" stop-color="#7A2017"/><stop offset="1" stop-color="#9A3932"/></linearGradient>
+    <linearGradient id="camera-retro-mint-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DED2C4"/><stop offset=".42" stop-color="#B9CEC4"/><stop offset=".72" stop-color="#91BDB5"/><stop offset="1" stop-color="#B9CEC4"/></linearGradient>
+    <linearGradient id="camera-retro-mint-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#DED2C4"/><stop offset="1" stop-color="#B9CEC4"/></linearGradient>
+    <radialGradient id="camera-retro-mint-glow"><stop stop-color="#DED2C4" stop-opacity=".5"/><stop offset=".32" stop-color="#B9CEC4" stop-opacity=".22"/><stop offset="1" stop-color="#B9CEC4" stop-opacity="0"/></radialGradient>
+    <pattern id="camera-retro-mint-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#DED2C4" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="camera-retro-mint-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#120A08" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#camera-retro-mint-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#camera-retro-mint-grain)" stroke="#B9CEC4" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#DED2C4" stroke-opacity=".22"/>
+  <g fill="none" stroke="#B9CEC4" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#B9CEC4"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#camera-retro-mint-shadow)"><path d="M57 31h126l9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15H57l-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15Z" fill="#9A3932" stroke="url(#camera-retro-mint-gold)" stroke-width="4"/><rect x="66" y="42" width="108" height="216" rx="49" fill="#7A2017" stroke="#DED2C4" stroke-opacity=".55" stroke-width="2"/></g>
+  <ellipse cx="120" cy="150" rx="68" ry="108" fill="none" stroke="#B9CEC4" stroke-opacity=".45"/>
+  
+    <g filter="url(#camera-retro-mint-shadow)"><path d="M65 99h110l11 24v84H54v-84Z" fill="#91BDB5" stroke="url(#camera-retro-mint-gold)" stroke-width="4"/><path d="M85 81h70l8 25H77Z" fill="#9A3932" stroke="#B9CEC4" stroke-width="2"/></g>
+    <circle cx="120" cy="148" r="38" fill="#3B211C" stroke="#DED2C4" stroke-width="5"/><circle cx="120" cy="148" r="26" fill="#7A2017" stroke="#B9CEC4" stroke-width="3"/><circle cx="120" cy="148" r="12" fill="url(#camera-retro-mint-glow)"/><circle cx="70" cy="120" r="7" fill="#DED2C4"/>
+    <path d="M155 218c25-8 39 1 43 27M85 218c-26 6-41 16-46 31" fill="none" stroke="#B9CEC4" stroke-width="4"/><path d="M161 219c4 12 10 17 20 14M79 220c-2 12-8 18-19 18" fill="none" stroke="#DED2C4" stroke-width="2"/>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="moon-plum-title moon-plum-desc">
+  <title id="moon-plum-title">月下远景 · 夜梅紫</title>
+  <desc id="moon-plum-desc">拱形纸雕徽章中的弯月、群山与远路，使用夜梅紫深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="moon-plum-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#211721"/><stop offset=".58" stop-color="#2d1f2d"/><stop offset="1" stop-color="#56334e"/></linearGradient>
+    <linearGradient id="moon-plum-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dec391"/><stop offset=".42" stop-color="#c39a60"/><stop offset=".72" stop-color="#82505c"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <linearGradient id="moon-plum-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dec391"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <radialGradient id="moon-plum-glow"><stop stop-color="#dec391" stop-opacity=".5"/><stop offset=".32" stop-color="#c39a60" stop-opacity=".22"/><stop offset="1" stop-color="#c39a60" stop-opacity="0"/></radialGradient>
+    <pattern id="moon-plum-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#dec391" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="moon-plum-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0b070c" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#moon-plum-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#moon-plum-grain)" stroke="#c39a60" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#dec391" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c39a60" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c39a60"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#moon-plum-shadow)"><path d="M43 244V111c0-55 33-88 77-88s77 33 77 88v133Z" fill="#56334e" stroke="url(#moon-plum-gold)" stroke-width="5"/><path d="M51 236V112c0-48 29-79 69-79s69 31 69 79v124Z" fill="#2d1f2d" stroke="#dec391" stroke-opacity=".48" stroke-width="2"/></g>
+  
+    <circle cx="120" cy="101" r="65" fill="url(#moon-plum-glow)"/><circle cx="120" cy="90" r="42" fill="url(#moon-plum-paper)"/><circle cx="137" cy="77" r="41" fill="#2d1f2d"/>
+    <g fill="#dec391"><circle cx="78" cy="71" r="2"/><circle cx="91" cy="52" r="1.4"/><path d="m162 58 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/></g>
+    <path d="M52 190 83 149l26 25 31-57 48 76v43H52Z" fill="#56334e"/><path d="m51 215 41-48 29 40 34-57 34 57v29H51Z" fill="#82505c"/><path d="M51 225c31-18 53-12 69 9 16-20 39-26 69-8v14H51Z" fill="#211721"/>
+    <path d="M108 230c4-14 9-24 12-31 4 7 9 17 12 31" fill="none" stroke="#c39a60" stroke-width="3"/>
+  <path d="M65 246c13 18 31 28 55 32 24-4 42-14 55-32" fill="none" stroke="#c39a60" stroke-width="2"/>
+  
+</svg>

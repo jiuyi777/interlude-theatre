@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="lamp-umber-title lamp-umber-desc">
+  <title id="lamp-umber-title">街灯 · 焦糖褐</title>
+  <desc id="lamp-umber-desc">弧形街灯照亮雨夜小巷与人物剪影，使用焦糖褐深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="lamp-umber-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1d1916"/><stop offset=".58" stop-color="#2d241e"/><stop offset="1" stop-color="#533c2e"/></linearGradient>
+    <linearGradient id="lamp-umber-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9bd88"/><stop offset=".42" stop-color="#c39050"/><stop offset=".72" stop-color="#876047"/><stop offset="1" stop-color="#c39050"/></linearGradient>
+    <linearGradient id="lamp-umber-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d9bd88"/><stop offset="1" stop-color="#c39050"/></linearGradient>
+    <radialGradient id="lamp-umber-glow"><stop stop-color="#d9bd88" stop-opacity=".5"/><stop offset=".32" stop-color="#c39050" stop-opacity=".22"/><stop offset="1" stop-color="#c39050" stop-opacity="0"/></radialGradient>
+    <pattern id="lamp-umber-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#d9bd88" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="lamp-umber-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#090705" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#lamp-umber-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#lamp-umber-grain)" stroke="#c39050" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#d9bd88" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c39050" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c39050"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#lamp-umber-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#090705" stroke="url(#lamp-umber-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#2d241e" stroke="#876047" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#lamp-umber-bg)"/>
+    <path d="M63 205V89c0-20 12-32 31-32h25" fill="none" stroke="#c39050" stroke-width="6"/><path d="M177 207v-86c0-17-10-27-26-27h-13" fill="none" stroke="#876047" stroke-width="5"/>
+    <path d="M106 53h36l-5 34h-26Z" fill="#533c2e" stroke="#d9bd88" stroke-width="2"/><circle cx="124" cy="72" r="47" fill="url(#lamp-umber-glow)"/><circle cx="124" cy="72" r="9" fill="#d9bd88"/>
+    <path d="M153 92h29l-4 28h-21Z" fill="#533c2e" stroke="#c39050" stroke-width="2"/><circle cx="168" cy="106" r="31" fill="url(#lamp-umber-glow)"/>
+    <path d="M37 212 74 167l29 34 34-55 66 66v19H37Z" fill="#533c2e"/><path d="M90 229c6-25 17-42 30-42s24 17 30 42" fill="#1d1916"/>
+  <path d="M22 246h196v38H22Z" fill="#2d241e" stroke="#c39050" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#c39050" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#533c2e" stroke="#c39050" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#d9bd88"/>
+</svg>

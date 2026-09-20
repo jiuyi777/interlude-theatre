@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="violin-peach-night-title violin-peach-night-desc">
+  <title id="violin-peach-night-title">提琴与玫瑰 · 夜蓝蜜桃</title>
+  <desc id="violin-peach-night-desc">提琴、琴弓和玫瑰藤构成抒情舞台徽记，使用夜蓝蜜桃深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="violin-peach-night-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050B10"/><stop offset=".58" stop-color="#173B5A"/><stop offset="1" stop-color="#6098C4"/></linearGradient>
+    <linearGradient id="violin-peach-night-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F4A08F"/><stop offset=".42" stop-color="#FF914D"/><stop offset=".72" stop-color="#A8A5CD"/><stop offset="1" stop-color="#FF914D"/></linearGradient>
+    <linearGradient id="violin-peach-night-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F4A08F"/><stop offset="1" stop-color="#FF914D"/></linearGradient>
+    <radialGradient id="violin-peach-night-glow"><stop stop-color="#F4A08F" stop-opacity=".5"/><stop offset=".32" stop-color="#FF914D" stop-opacity=".22"/><stop offset="1" stop-color="#FF914D" stop-opacity="0"/></radialGradient>
+    <pattern id="violin-peach-night-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#F4A08F" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="violin-peach-night-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#020507" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#violin-peach-night-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#violin-peach-night-grain)" stroke="#FF914D" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#F4A08F" stroke-opacity=".22"/>
+  <g fill="none" stroke="#FF914D" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#FF914D"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <path d="M15 19h210v29c-34 22-70 21-105 3-35 18-71 19-105-3Z" fill="#6098C4" stroke="#FF914D" stroke-width="2"/>
+  <path d="M17 19h48c9 66-2 122-43 166l-5-7Zm206 0h-48c-9 66 2 122 43 166l5-7Z" fill="#A8A5CD" stroke="#FF914D" stroke-width="1.5"/>
+  <g filter="url(#violin-peach-night-shadow)"><path d="M120 50 187 88v83c0 43-29 68-67 84-38-16-67-41-67-84V88Z" fill="#173B5A" stroke="url(#violin-peach-night-gold)" stroke-width="5"/><path d="M120 61 176 94v73c0 35-23 56-56 71-33-15-56-36-56-71V94Z" fill="none" stroke="#FF914D" stroke-opacity=".48" stroke-width="1.5"/></g>
+  
+    <path d="M119 75c13 0 19 11 14 24-4 10-3 20 4 29 13 16 11 35-5 45 6 17 2 31-12 43-14-12-18-26-12-43-16-10-18-29-5-45 7-9 8-19 4-29-5-13 1-24 12-24Z" fill="url(#violin-peach-night-paper)" stroke="#FF914D" stroke-width="3"/><path d="M120 76v142M108 129h24M106 169h28" stroke="#6098C4" stroke-width="3"/><path d="M97 93 151 207" stroke="#FF914D" stroke-width="5"/>
+    <g fill="none" stroke="#A8A5CD" stroke-width="5"><path d="M79 183c-16-16-13-31 8-37 13-4 22 1 27 14M161 183c16-16 13-31-8-37-13-4-22 1-27 14"/></g>
+    <g fill="#F4A08F" stroke="#FF914D" stroke-width="1.5"><circle cx="79" cy="183" r="10"/><circle cx="161" cy="183" r="10"/><circle cx="88" cy="143" r="7"/><circle cx="152" cy="143" r="7"/></g>
+  <path d="M48 256c22 14 46 21 72 22 26-1 50-8 72-22l8 14c-24 17-51 25-80 26-29-1-56-9-80-26Z" fill="#6098C4" stroke="#FF914D" stroke-width="2"/>
+</svg>

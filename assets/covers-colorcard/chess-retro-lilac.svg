@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="chess-retro-lilac-title chess-retro-lilac-desc">
+  <title id="chess-retro-lilac-title">午夜棋局 · 复古丁香</title>
+  <desc id="chess-retro-lilac-desc">皇后、骑士与棋盘组成对弈徽记，使用复古丁香深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="chess-retro-lilac-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2A1B2D"/><stop offset=".58" stop-color="#684F70"/><stop offset="1" stop-color="#814544"/></linearGradient>
+    <linearGradient id="chess-retro-lilac-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DED2C4"/><stop offset=".42" stop-color="#C6B8A8"/><stop offset=".72" stop-color="#AAA6AA"/><stop offset="1" stop-color="#C6B8A8"/></linearGradient>
+    <linearGradient id="chess-retro-lilac-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#DED2C4"/><stop offset="1" stop-color="#C6B8A8"/></linearGradient>
+    <radialGradient id="chess-retro-lilac-glow"><stop stop-color="#DED2C4" stop-opacity=".5"/><stop offset=".32" stop-color="#C6B8A8" stop-opacity=".22"/><stop offset="1" stop-color="#C6B8A8" stop-opacity="0"/></radialGradient>
+    <pattern id="chess-retro-lilac-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#DED2C4" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="chess-retro-lilac-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#120C14" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#chess-retro-lilac-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#chess-retro-lilac-grain)" stroke="#C6B8A8" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#DED2C4" stroke-opacity=".22"/>
+  <g fill="none" stroke="#C6B8A8" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#C6B8A8"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <path d="M15 19h210v29c-34 22-70 21-105 3-35 18-71 19-105-3Z" fill="#814544" stroke="#C6B8A8" stroke-width="2"/>
+  <path d="M17 19h48c9 66-2 122-43 166l-5-7Zm206 0h-48c-9 66 2 122 43 166l5-7Z" fill="#AAA6AA" stroke="#C6B8A8" stroke-width="1.5"/>
+  <g filter="url(#chess-retro-lilac-shadow)"><path d="M120 50 187 88v83c0 43-29 68-67 84-38-16-67-41-67-84V88Z" fill="#684F70" stroke="url(#chess-retro-lilac-gold)" stroke-width="5"/><path d="M120 61 176 94v73c0 35-23 56-56 71-33-15-56-36-56-71V94Z" fill="none" stroke="#C6B8A8" stroke-opacity=".48" stroke-width="1.5"/></g>
+  
+    <path d="M75 199h90v24H75Z" fill="#814544" stroke="#C6B8A8" stroke-width="2"/><path d="M78 177h84l-8 22H86Z" fill="#AAA6AA"/>
+    <path d="M94 176c10-14 14-28 12-42l-12-13 13-12 13 12 13-12 13 12-12 13c-2 14 2 28 12 42Z" fill="url(#chess-retro-lilac-paper)" stroke="#C6B8A8" stroke-width="3"/><circle cx="120" cy="104" r="9" fill="#DED2C4"/>
+    <path d="M70 202h20v20H70Zm40 0h20v20h-20Zm40 0h20v20h-20Z" fill="#DED2C4" opacity=".75"/><path d="M66 88c20 4 31 14 34 31M174 88c-20 4-31 14-34 31" fill="none" stroke="#C6B8A8" stroke-width="3"/>
+    <path d="M74 98c3-18 13-29 29-34l14 25-19 11Z" fill="#814544" stroke="#DED2C4" stroke-width="2"/><circle cx="99" cy="78" r="3" fill="#DED2C4"/>
+  <path d="M48 256c22 14 46 21 72 22 26-1 50-8 72-22l8 14c-24 17-51 25-80 26-29-1-56-9-80-26Z" fill="#814544" stroke="#C6B8A8" stroke-width="2"/>
+</svg>

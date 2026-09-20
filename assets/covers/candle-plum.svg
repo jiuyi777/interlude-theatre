@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="candle-plum-title candle-plum-desc">
+  <title id="candle-plum-title">烛火 · 夜梅紫</title>
+  <desc id="candle-plum-desc">神谕牌框中的烛火、星轨与融蜡，使用夜梅紫深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="candle-plum-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#211721"/><stop offset=".58" stop-color="#2d1f2d"/><stop offset="1" stop-color="#56334e"/></linearGradient>
+    <linearGradient id="candle-plum-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dec391"/><stop offset=".42" stop-color="#c39a60"/><stop offset=".72" stop-color="#82505c"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <linearGradient id="candle-plum-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dec391"/><stop offset="1" stop-color="#c39a60"/></linearGradient>
+    <radialGradient id="candle-plum-glow"><stop stop-color="#dec391" stop-opacity=".5"/><stop offset=".32" stop-color="#c39a60" stop-opacity=".22"/><stop offset="1" stop-color="#c39a60" stop-opacity="0"/></radialGradient>
+    <pattern id="candle-plum-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#dec391" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="candle-plum-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0b070c" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#candle-plum-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#candle-plum-grain)" stroke="#c39a60" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#dec391" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c39a60" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c39a60"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#candle-plum-shadow)"><path d="M57 31h126l9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15H57l-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15Z" fill="#56334e" stroke="url(#candle-plum-gold)" stroke-width="4"/><rect x="66" y="42" width="108" height="216" rx="49" fill="#2d1f2d" stroke="#dec391" stroke-opacity=".55" stroke-width="2"/></g>
+  <ellipse cx="120" cy="150" rx="68" ry="108" fill="none" stroke="#c39a60" stroke-opacity=".45"/>
+  
+    <circle cx="120" cy="105" r="57" fill="url(#candle-plum-glow)"/>
+    <path d="M120 112c-27-28 10-55 4-80 31 29 20 56-4 80Z" fill="#c39a60"/><path d="M120 98c-12-15 4-27 5-41 14 16 8 29-5 41Z" fill="#dec391"/>
+    <rect x="91" y="112" width="58" height="108" rx="9" fill="url(#candle-plum-paper)" stroke="#c39a60" stroke-width="2"/><path d="M101 122c8 15 19 10 25-2 7 14 14 10 23-3v29H91v-20c4 6 7 5 10-4Z" fill="#82505c"/>
+    <ellipse cx="120" cy="227" rx="65" ry="15" fill="#56334e" stroke="#c39a60" stroke-width="2"/><path d="M120 43c-11-8-14-17-8-27M133 55c14-10 19-22 13-35" fill="none" stroke="#dec391" stroke-opacity=".5" stroke-width="2"/>
+    <g fill="#c39a60"><path d="m82 78 3 7 7 3-7 3-3 7-3-7-7-3 7-3Zm76 78 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/></g>
+</svg>

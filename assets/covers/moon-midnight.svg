@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="moon-midnight-title moon-midnight-desc">
+  <title id="moon-midnight-title">月下远景 · 午夜蓝</title>
+  <desc id="moon-midnight-desc">拱形纸雕徽章中的弯月、群山与远路，使用午夜蓝深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="moon-midnight-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101d26"/><stop offset=".58" stop-color="#142a32"/><stop offset="1" stop-color="#283c4b"/></linearGradient>
+    <linearGradient id="moon-midnight-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dfc891"/><stop offset=".42" stop-color="#c5a25e"/><stop offset=".72" stop-color="#536879"/><stop offset="1" stop-color="#c5a25e"/></linearGradient>
+    <linearGradient id="moon-midnight-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dfc891"/><stop offset="1" stop-color="#c5a25e"/></linearGradient>
+    <radialGradient id="moon-midnight-glow"><stop stop-color="#dfc891" stop-opacity=".5"/><stop offset=".32" stop-color="#c5a25e" stop-opacity=".22"/><stop offset="1" stop-color="#c5a25e" stop-opacity="0"/></radialGradient>
+    <pattern id="moon-midnight-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#dfc891" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="moon-midnight-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#060a0d" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#moon-midnight-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#moon-midnight-grain)" stroke="#c5a25e" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#dfc891" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c5a25e" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c5a25e"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#moon-midnight-shadow)"><path d="M43 244V111c0-55 33-88 77-88s77 33 77 88v133Z" fill="#283c4b" stroke="url(#moon-midnight-gold)" stroke-width="5"/><path d="M51 236V112c0-48 29-79 69-79s69 31 69 79v124Z" fill="#142a32" stroke="#dfc891" stroke-opacity=".48" stroke-width="2"/></g>
+  
+    <circle cx="120" cy="101" r="65" fill="url(#moon-midnight-glow)"/><circle cx="120" cy="90" r="42" fill="url(#moon-midnight-paper)"/><circle cx="137" cy="77" r="41" fill="#142a32"/>
+    <g fill="#dfc891"><circle cx="78" cy="71" r="2"/><circle cx="91" cy="52" r="1.4"/><path d="m162 58 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/></g>
+    <path d="M52 190 83 149l26 25 31-57 48 76v43H52Z" fill="#283c4b"/><path d="m51 215 41-48 29 40 34-57 34 57v29H51Z" fill="#536879"/><path d="M51 225c31-18 53-12 69 9 16-20 39-26 69-8v14H51Z" fill="#101d26"/>
+    <path d="M108 230c4-14 9-24 12-31 4 7 9 17 12 31" fill="none" stroke="#c5a25e" stroke-width="3"/>
+  <path d="M65 246c13 18 31 28 55 32 24-4 42-14 55-32" fill="none" stroke="#c5a25e" stroke-width="2"/>
+  
+</svg>

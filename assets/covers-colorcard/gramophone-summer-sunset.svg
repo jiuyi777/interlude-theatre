@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="gramophone-summer-sunset-title gramophone-summer-sunset-desc">
+  <title id="gramophone-summer-sunset-title">留声机 · 盛夏落日</title>
+  <desc id="gramophone-summer-sunset-desc">黄铜唱筒、唱片和流动音轨组成怀旧舞台，使用盛夏落日深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="gramophone-summer-sunset-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#702914"/><stop offset=".58" stop-color="#E0843C"/><stop offset="1" stop-color="#F07021"/></linearGradient>
+    <linearGradient id="gramophone-summer-sunset-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F7FBC9"/><stop offset=".42" stop-color="#F7DA77"/><stop offset=".72" stop-color="#E4B773"/><stop offset="1" stop-color="#F7DA77"/></linearGradient>
+    <linearGradient id="gramophone-summer-sunset-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F7FBC9"/><stop offset="1" stop-color="#F7DA77"/></linearGradient>
+    <radialGradient id="gramophone-summer-sunset-glow"><stop stop-color="#F7FBC9" stop-opacity=".5"/><stop offset=".32" stop-color="#F7DA77" stop-opacity=".22"/><stop offset="1" stop-color="#F7DA77" stop-opacity="0"/></radialGradient>
+    <pattern id="gramophone-summer-sunset-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#F7FBC9" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="gramophone-summer-sunset-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#240D06" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#gramophone-summer-sunset-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#gramophone-summer-sunset-grain)" stroke="#F7DA77" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#F7FBC9" stroke-opacity=".22"/>
+  <g fill="none" stroke="#F7DA77" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#F7DA77"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#gramophone-summer-sunset-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#240D06" stroke="url(#gramophone-summer-sunset-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#E0843C" stroke="#E4B773" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#gramophone-summer-sunset-bg)"/><path d="M73 196h99l-8 32H81Z" fill="#F07021" stroke="#F7DA77" stroke-width="3"/><circle cx="122" cy="185" r="28" fill="#702914" stroke="#F7FBC9" stroke-width="3"/><circle cx="122" cy="185" r="7" fill="#E4B773"/>
+    <path d="M131 171c28-34 44-59 42-84-17 5-35 16-52 31 20 13 27 31 10 53Z" fill="url(#gramophone-summer-sunset-paper)" stroke="#F7DA77" stroke-width="3"/><path d="M121 119c-14-12-24-17-30-14M162 105c13-9 23-12 30-8" fill="none" stroke="#F7FBC9" stroke-width="2"/>
+    <g fill="none" stroke="#F7DA77" stroke-width="2" stroke-linecap="round"><path d="M64 91c21 7 28 23 21 47"/><path d="M55 78c34 10 46 36 34 72"/><path d="M177 137c14 8 20 19 18 34"/></g>
+  <path d="M22 246h196v38H22Z" fill="#E0843C" stroke="#F7DA77" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#F7DA77" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#F07021" stroke="#F7DA77" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#F7FBC9"/>
+</svg>

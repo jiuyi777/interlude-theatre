@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="whale-charcoal-red-title whale-charcoal-red-desc">
+  <title id="whale-charcoal-red-title">星海鲸 · 炭灰暗红</title>
+  <desc id="whale-charcoal-red-desc">鲸鱼跃过星轨与波浪，构成幻想图腾，使用炭灰暗红深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="whale-charcoal-red-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0A0A0A"/><stop offset=".58" stop-color="#33312F"/><stop offset="1" stop-color="#371E1E"/></linearGradient>
+    <linearGradient id="whale-charcoal-red-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#B7B4AE"/><stop offset=".42" stop-color="#9A817C"/><stop offset=".72" stop-color="#726E68"/><stop offset="1" stop-color="#9A817C"/></linearGradient>
+    <linearGradient id="whale-charcoal-red-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#B7B4AE"/><stop offset="1" stop-color="#9A817C"/></linearGradient>
+    <radialGradient id="whale-charcoal-red-glow"><stop stop-color="#B7B4AE" stop-opacity=".5"/><stop offset=".32" stop-color="#9A817C" stop-opacity=".22"/><stop offset="1" stop-color="#9A817C" stop-opacity="0"/></radialGradient>
+    <pattern id="whale-charcoal-red-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#B7B4AE" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="whale-charcoal-red-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#whale-charcoal-red-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#whale-charcoal-red-grain)" stroke="#9A817C" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#B7B4AE" stroke-opacity=".22"/>
+  <g fill="none" stroke="#9A817C" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#9A817C"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#whale-charcoal-red-shadow)"><path d="M43 244V111c0-55 33-88 77-88s77 33 77 88v133Z" fill="#371E1E" stroke="url(#whale-charcoal-red-gold)" stroke-width="5"/><path d="M51 236V112c0-48 29-79 69-79s69 31 69 79v124Z" fill="#33312F" stroke="#B7B4AE" stroke-opacity=".48" stroke-width="2"/></g>
+  
+    <circle cx="165" cy="72" r="31" fill="url(#whale-charcoal-red-glow)"/><g fill="#B7B4AE"><path d="m162 53 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/><circle cx="88" cy="66" r="2"/><circle cx="112" cy="49" r="2"/></g>
+    <path d="M66 157c28-31 61-38 99-22 10 4 20 3 31-3-6 18-20 28-42 29-19 20-43 29-72 25-12-2-22-10-28-25 7 2 11 1 12-4Z" fill="#726E68" stroke="#B7B4AE" stroke-width="3"/><path d="M179 139c9-15 21-22 35-21-5 13-13 22-26 26 11 3 19 10 25 21-14 2-26-3-36-16" fill="#371E1E" stroke="#9A817C" stroke-width="2"/><circle cx="91" cy="157" r="3" fill="#0A0A0A"/>
+    <path d="M50 211c25-17 47-17 70 0 24 17 46 17 69 0M55 229c21-13 40-13 59 0 20 13 40 13 61 0" fill="none" stroke="#9A817C" stroke-width="4"/>
+  <path d="M65 246c13 18 31 28 55 32 24-4 42-14 55-32" fill="none" stroke="#9A817C" stroke-width="2"/>
+  
+</svg>

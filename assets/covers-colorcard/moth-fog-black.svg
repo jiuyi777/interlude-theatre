@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="moth-fog-black-title moth-fog-black-desc">
+  <title id="moth-fog-black-title">夜蛾标本 · 雾灰蓝黑</title>
+  <desc id="moth-fog-black-desc">展翼夜蛾、花枝和标本针构成博物图谱，使用雾灰蓝黑深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="moth-fog-black-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#000000"/><stop offset=".58" stop-color="#24292E"/><stop offset="1" stop-color="#4A5156"/></linearGradient>
+    <linearGradient id="moth-fog-black-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#BDC7CE"/><stop offset=".42" stop-color="#9EABB3"/><stop offset=".72" stop-color="#808A92"/><stop offset="1" stop-color="#9EABB3"/></linearGradient>
+    <linearGradient id="moth-fog-black-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#BDC7CE"/><stop offset="1" stop-color="#9EABB3"/></linearGradient>
+    <radialGradient id="moth-fog-black-glow"><stop stop-color="#BDC7CE" stop-opacity=".5"/><stop offset=".32" stop-color="#9EABB3" stop-opacity=".22"/><stop offset="1" stop-color="#9EABB3" stop-opacity="0"/></radialGradient>
+    <pattern id="moth-fog-black-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#BDC7CE" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="moth-fog-black-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#moth-fog-black-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#moth-fog-black-grain)" stroke="#9EABB3" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#BDC7CE" stroke-opacity=".22"/>
+  <g fill="none" stroke="#9EABB3" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#9EABB3"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#moth-fog-black-shadow)"><path d="M57 31h126l9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15H57l-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15Z" fill="#4A5156" stroke="url(#moth-fog-black-gold)" stroke-width="4"/><rect x="66" y="42" width="108" height="216" rx="49" fill="#24292E" stroke="#BDC7CE" stroke-opacity=".55" stroke-width="2"/></g>
+  <ellipse cx="120" cy="150" rx="68" ry="108" fill="none" stroke="#9EABB3" stroke-opacity=".45"/>
+  
+    <path d="M120 92c-16-26-42-35-61-20 3 31 19 50 48 57-26 5-39 22-37 47 24 9 40-2 50-27 10 25 26 36 50 27 2-25-11-42-37-47 29-7 45-26 48-57-19-15-45-6-61 20Z" fill="#808A92" stroke="#BDC7CE" stroke-width="2"/>
+    <path d="M108 105c-18-18-31-23-39-16 6 18 18 29 36 32M132 105c18-18 31-23 39-16-6 18-18 29-36 32M105 139c-16 5-24 14-23 26 14 4 24-3 30-20M135 139c16 5 24 14 23 26-14 4-24-3-30-20" fill="none" stroke="#9EABB3" stroke-width="3"/>
+    <ellipse cx="120" cy="133" rx="10" ry="48" fill="#4A5156" stroke="#9EABB3" stroke-width="2"/><path d="M115 89c-9-16-19-23-29-21M125 89c9-16 19-23 29-21" fill="none" stroke="#BDC7CE" stroke-width="2"/>
+    <g fill="#BDC7CE"><circle cx="82" cy="98" r="5"/><circle cx="158" cy="98" r="5"/><circle cx="94" cy="159" r="4"/><circle cx="146" cy="159" r="4"/></g><path d="M76 214c11-13 20-18 27-15 4 2 5 7 4 15 9-18 18-22 27-12 7-11 16-11 27 1" fill="none" stroke="#9EABB3" stroke-width="3"/>
+</svg>

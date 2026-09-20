@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="staircase-retro-olive-title staircase-retro-olive-desc">
+  <title id="staircase-retro-olive-title">螺旋楼梯 · 复古蓝橄榄</title>
+  <desc id="staircase-retro-olive-desc">螺旋阶梯通向发光小门，形成纵深场景，使用复古蓝橄榄深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="staircase-retro-olive-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#24323B"/><stop offset=".58" stop-color="#355D7A"/><stop offset="1" stop-color="#7E8C73"/></linearGradient>
+    <linearGradient id="staircase-retro-olive-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#E5D7C2"/><stop offset=".42" stop-color="#C7BDA6"/><stop offset=".72" stop-color="#9C4B1B"/><stop offset="1" stop-color="#C7BDA6"/></linearGradient>
+    <linearGradient id="staircase-retro-olive-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#E5D7C2"/><stop offset="1" stop-color="#C7BDA6"/></linearGradient>
+    <radialGradient id="staircase-retro-olive-glow"><stop stop-color="#E5D7C2" stop-opacity=".5"/><stop offset=".32" stop-color="#C7BDA6" stop-opacity=".22"/><stop offset="1" stop-color="#C7BDA6" stop-opacity="0"/></radialGradient>
+    <pattern id="staircase-retro-olive-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#E5D7C2" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="staircase-retro-olive-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0E1418" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#staircase-retro-olive-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#staircase-retro-olive-grain)" stroke="#C7BDA6" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#E5D7C2" stroke-opacity=".22"/>
+  <g fill="none" stroke="#C7BDA6" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#C7BDA6"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#staircase-retro-olive-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#0E1418" stroke="url(#staircase-retro-olive-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#355D7A" stroke="#9C4B1B" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#staircase-retro-olive-bg)"/><rect x="96" y="55" width="48" height="63" rx="20" fill="url(#staircase-retro-olive-glow)" stroke="#E5D7C2" stroke-width="3"/><path d="M103 113h34v-48h-34Z" fill="#C7BDA6" fill-opacity=".35"/>
+    <path d="M59 210c16-3 27-10 34-21-19-3-30-11-34-25 17 1 30-5 38-17-17-5-27-14-30-28 25 4 43-1 53-16 10 15 28 20 53 16-3 14-13 23-30 28 8 12 21 18 38 17-4 14-15 22-34 25 7 11 18 18 34 21" fill="none" stroke="#C7BDA6" stroke-width="7" stroke-linecap="round"/>
+    <path d="M120 104v123" stroke="#E5D7C2" stroke-opacity=".5" stroke-width="2"/><circle cx="120" cy="113" r="5" fill="#E5D7C2"/>
+  <path d="M22 246h196v38H22Z" fill="#355D7A" stroke="#C7BDA6" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#C7BDA6" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#7E8C73" stroke="#C7BDA6" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#E5D7C2"/>
+</svg>

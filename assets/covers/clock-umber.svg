@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="clock-umber-title clock-umber-desc">
+  <title id="clock-umber-title">旧钟表 · 焦糖褐</title>
+  <desc id="clock-umber-desc">罗马钟面、摆锤与齿轮构成时间纹章，使用焦糖褐深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="clock-umber-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1d1916"/><stop offset=".58" stop-color="#2d241e"/><stop offset="1" stop-color="#533c2e"/></linearGradient>
+    <linearGradient id="clock-umber-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9bd88"/><stop offset=".42" stop-color="#c39050"/><stop offset=".72" stop-color="#876047"/><stop offset="1" stop-color="#c39050"/></linearGradient>
+    <linearGradient id="clock-umber-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d9bd88"/><stop offset="1" stop-color="#c39050"/></linearGradient>
+    <radialGradient id="clock-umber-glow"><stop stop-color="#d9bd88" stop-opacity=".5"/><stop offset=".32" stop-color="#c39050" stop-opacity=".22"/><stop offset="1" stop-color="#c39050" stop-opacity="0"/></radialGradient>
+    <pattern id="clock-umber-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#d9bd88" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="clock-umber-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#090705" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#clock-umber-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#clock-umber-grain)" stroke="#c39050" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#d9bd88" stroke-opacity=".22"/>
+  <g fill="none" stroke="#c39050" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#c39050"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <path d="M15 19h210v29c-34 22-70 21-105 3-35 18-71 19-105-3Z" fill="#533c2e" stroke="#c39050" stroke-width="2"/>
+  <path d="M17 19h48c9 66-2 122-43 166l-5-7Zm206 0h-48c-9 66 2 122 43 166l5-7Z" fill="#876047" stroke="#c39050" stroke-width="1.5"/>
+  <g filter="url(#clock-umber-shadow)"><path d="M120 50 187 88v83c0 43-29 68-67 84-38-16-67-41-67-84V88Z" fill="#2d241e" stroke="url(#clock-umber-gold)" stroke-width="5"/><path d="M120 61 176 94v73c0 35-23 56-56 71-33-15-56-36-56-71V94Z" fill="none" stroke="#c39050" stroke-opacity=".48" stroke-width="1.5"/></g>
+  
+    <circle cx="120" cy="139" r="66" fill="#1d1916" stroke="url(#clock-umber-gold)" stroke-width="6"/><circle cx="120" cy="139" r="54" fill="#2d241e" stroke="#d9bd88" stroke-opacity=".55" stroke-width="2"/>
+    <g stroke="#c39050" stroke-width="4"><path d="M120 85v11M120 182v11M66 139h11M163 139h11"/><path d="M82 101l8 8M150 169l8 8M158 101l-8 8M90 169l-8 8" stroke-width="3"/></g>
+    <path d="M120 139 112 104M120 139l31 19" fill="none" stroke="#d9bd88" stroke-width="6" stroke-linecap="round"/><circle cx="120" cy="139" r="8" fill="#876047" stroke="#c39050" stroke-width="2"/>
+    <path d="M120 204v27" stroke="#c39050" stroke-width="4"/><ellipse cx="120" cy="232" rx="14" ry="9" fill="#d9bd88"/>
+    <g fill="none" stroke="#876047" stroke-width="4"><circle cx="76" cy="210" r="19"/><circle cx="164" cy="213" r="24"/></g>
+  <path d="M48 256c22 14 46 21 72 22 26-1 50-8 72-22l8 14c-24 17-51 25-80 26-29-1-56-9-80-26Z" fill="#533c2e" stroke="#c39050" stroke-width="2"/>
+</svg>

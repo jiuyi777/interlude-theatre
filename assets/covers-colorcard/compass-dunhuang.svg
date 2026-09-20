@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="compass-dunhuang-title compass-dunhuang-desc">
+  <title id="compass-dunhuang-title">古地图罗盘 · 敦煌橙青</title>
+  <desc id="compass-dunhuang-desc">罗盘、经纬线和折叠地图组成远行徽记，使用敦煌橙青深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="compass-dunhuang-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#432714"/><stop offset=".58" stop-color="#A14924"/><stop offset="1" stop-color="#BF5825"/></linearGradient>
+    <linearGradient id="compass-dunhuang-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DD9650"/><stop offset=".42" stop-color="#E0B26F"/><stop offset=".72" stop-color="#6BB0A0"/><stop offset="1" stop-color="#E0B26F"/></linearGradient>
+    <linearGradient id="compass-dunhuang-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#DD9650"/><stop offset="1" stop-color="#E0B26F"/></linearGradient>
+    <radialGradient id="compass-dunhuang-glow"><stop stop-color="#DD9650" stop-opacity=".5"/><stop offset=".32" stop-color="#E0B26F" stop-opacity=".22"/><stop offset="1" stop-color="#E0B26F" stop-opacity="0"/></radialGradient>
+    <pattern id="compass-dunhuang-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#DD9650" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="compass-dunhuang-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#160C07" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#compass-dunhuang-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#compass-dunhuang-grain)" stroke="#E0B26F" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#DD9650" stroke-opacity=".22"/>
+  <g fill="none" stroke="#E0B26F" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#E0B26F"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#compass-dunhuang-shadow)"><path d="M57 31h126l9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15 9 15-9 15H57l-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15-9-15 9-15Z" fill="#BF5825" stroke="url(#compass-dunhuang-gold)" stroke-width="4"/><rect x="66" y="42" width="108" height="216" rx="49" fill="#A14924" stroke="#DD9650" stroke-opacity=".55" stroke-width="2"/></g>
+  <ellipse cx="120" cy="150" rx="68" ry="108" fill="none" stroke="#E0B26F" stroke-opacity=".45"/>
+  
+    <circle cx="120" cy="146" r="62" fill="#432714" stroke="url(#compass-dunhuang-gold)" stroke-width="5"/><circle cx="120" cy="146" r="49" fill="#A14924" stroke="#DD9650" stroke-opacity=".52" stroke-width="2"/>
+    <g fill="none" stroke="#E0B26F" stroke-width="2" stroke-opacity=".65"><ellipse cx="120" cy="146" rx="82" ry="30"/><ellipse cx="120" cy="146" rx="30" ry="82"/><path d="M74 100l92 92M166 100l-92 92"/></g>
+    <path d="m120 86 13 47 42 13-42 13-13 47-13-47-42-13 42-13Z" fill="#6BB0A0" stroke="#DD9650" stroke-width="2"/><path d="m120 104 7 31 27 11-27 11-7 31-7-31-27-11 27-11Z" fill="#DD9650"/><circle cx="120" cy="146" r="8" fill="#BF5825" stroke="#E0B26F" stroke-width="2"/>
+    <path d="M75 217c25-16 47-15 66 3 14-12 29-14 44-5" fill="none" stroke="#DD9650" stroke-width="3" stroke-dasharray="3 5"/>
+</svg>

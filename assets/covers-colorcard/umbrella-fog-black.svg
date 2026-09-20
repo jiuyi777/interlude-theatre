@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="umbrella-fog-black-title umbrella-fog-black-desc">
+  <title id="umbrella-fog-black-title">雨中伞 · 雾灰蓝黑</title>
+  <desc id="umbrella-fog-black-desc">展开雨伞、雨滴和水洼波纹组成雨夜场景，使用雾灰蓝黑深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="umbrella-fog-black-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#000000"/><stop offset=".58" stop-color="#24292E"/><stop offset="1" stop-color="#4A5156"/></linearGradient>
+    <linearGradient id="umbrella-fog-black-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#BDC7CE"/><stop offset=".42" stop-color="#9EABB3"/><stop offset=".72" stop-color="#808A92"/><stop offset="1" stop-color="#9EABB3"/></linearGradient>
+    <linearGradient id="umbrella-fog-black-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#BDC7CE"/><stop offset="1" stop-color="#9EABB3"/></linearGradient>
+    <radialGradient id="umbrella-fog-black-glow"><stop stop-color="#BDC7CE" stop-opacity=".5"/><stop offset=".32" stop-color="#9EABB3" stop-opacity=".22"/><stop offset="1" stop-color="#9EABB3" stop-opacity="0"/></radialGradient>
+    <pattern id="umbrella-fog-black-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#BDC7CE" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="umbrella-fog-black-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#umbrella-fog-black-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#umbrella-fog-black-grain)" stroke="#9EABB3" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#BDC7CE" stroke-opacity=".22"/>
+  <g fill="none" stroke="#9EABB3" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#9EABB3"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#umbrella-fog-black-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#000000" stroke="url(#umbrella-fog-black-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#24292E" stroke="#808A92" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#umbrella-fog-black-bg)"/><g stroke="#BDC7CE" stroke-width="2" stroke-linecap="round" opacity=".65"><path d="m56 62-7 16M82 50l-7 16M108 63l-7 16M141 49l-7 16M173 62l-7 16M194 47l-7 16"/></g>
+    <path d="M58 142c14-45 40-67 78-67s64 22 78 67c-13-8-26-8-39 0-13-8-26-8-39 0-13-8-26-8-39 0-13-8-26-8-39 0Z" fill="#808A92" stroke="#BDC7CE" stroke-width="3"/><path d="M136 77v106c0 27-28 31-38 10" fill="none" stroke="#9EABB3" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="136" cy="218" rx="67" ry="12" fill="none" stroke="#9EABB3" stroke-width="3"/><ellipse cx="136" cy="218" rx="39" ry="7" fill="none" stroke="#BDC7CE" stroke-opacity=".55" stroke-width="2"/>
+  <path d="M22 246h196v38H22Z" fill="#24292E" stroke="#9EABB3" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#9EABB3" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#4A5156" stroke="#9EABB3" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#BDC7CE"/>
+</svg>

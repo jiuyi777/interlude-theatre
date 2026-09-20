@@ -1,0 +1,12 @@
+{
+  "id": "interlude-theatre",
+  "display_name": "无名剧场",
+  "description": "随时读取当前聊天上下文，制作并预览独立 HTML 番外，不发送聊天消息。",
+  "loading_order": 120,
+  "js": "index.js",
+  "css": "style.css",
+  "author": "凡人歌 × Codex",
+  "version": "0.5.1",
+  "minimum_client_version": "1.14.0",
+  "auto_update": false
+}

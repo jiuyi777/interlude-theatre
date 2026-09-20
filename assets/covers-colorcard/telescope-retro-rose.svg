@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="telescope-retro-rose-title telescope-retro-rose-desc">
+  <title id="telescope-retro-rose-title">天文望远镜 · 复古粉墨</title>
+  <desc id="telescope-retro-rose-desc">望远镜、星轨和星座线构成观测记录，使用复古粉墨深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="telescope-retro-rose-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1E1110"/><stop offset=".58" stop-color="#44434D"/><stop offset="1" stop-color="#733247"/></linearGradient>
+    <linearGradient id="telescope-retro-rose-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F0E7D0"/><stop offset=".42" stop-color="#D8BC8E"/><stop offset=".72" stop-color="#C9969B"/><stop offset="1" stop-color="#D8BC8E"/></linearGradient>
+    <linearGradient id="telescope-retro-rose-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F0E7D0"/><stop offset="1" stop-color="#D8BC8E"/></linearGradient>
+    <radialGradient id="telescope-retro-rose-glow"><stop stop-color="#F0E7D0" stop-opacity=".5"/><stop offset=".32" stop-color="#D8BC8E" stop-opacity=".22"/><stop offset="1" stop-color="#D8BC8E" stop-opacity="0"/></radialGradient>
+    <pattern id="telescope-retro-rose-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#F0E7D0" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="telescope-retro-rose-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0B0606" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#telescope-retro-rose-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#telescope-retro-rose-grain)" stroke="#D8BC8E" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#F0E7D0" stroke-opacity=".22"/>
+  <g fill="none" stroke="#D8BC8E" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#D8BC8E"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#telescope-retro-rose-shadow)"><path d="M43 244V111c0-55 33-88 77-88s77 33 77 88v133Z" fill="#733247" stroke="url(#telescope-retro-rose-gold)" stroke-width="5"/><path d="M51 236V112c0-48 29-79 69-79s69 31 69 79v124Z" fill="#44434D" stroke="#F0E7D0" stroke-opacity=".48" stroke-width="2"/></g>
+  
+    <circle cx="156" cy="75" r="37" fill="url(#telescope-retro-rose-glow)"/><g fill="#F0E7D0"><path d="m164 56 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/><circle cx="87" cy="70" r="2"/><circle cx="104" cy="51" r="2"/><circle cx="153" cy="105" r="2"/></g>
+    <path d="M78 145 149 91l17 23-70 54Z" fill="#C9969B" stroke="#F0E7D0" stroke-width="3"/><path d="m149 91 19-8 13 18-15 13Z" fill="#733247" stroke="#D8BC8E" stroke-width="2"/><circle cx="92" cy="161" r="10" fill="#D8BC8E"/>
+    <path d="M92 171 67 225M98 171l16 55M93 171l-2 56" stroke="#D8BC8E" stroke-width="5"/><path d="M52 228c28-27 55-31 81-12 18-16 36-16 56 0v23H52Z" fill="#733247"/>
+    <path d="M64 107c16-12 30-12 42 0M135 48c15-11 29-11 42 0" fill="none" stroke="#D8BC8E" stroke-width="2" stroke-dasharray="2 6"/>
+  <path d="M65 246c13 18 31 28 55 32 24-4 42-14 55-32" fill="none" stroke="#D8BC8E" stroke-width="2"/>
+  
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="city-forest-title city-forest-desc">
+  <title id="city-forest-title">夜城 · 松林绿</title>
+  <desc id="city-forest-desc">不对称高楼、拱桥与月光组成夜城海报，使用松林绿深色暖纸配色。</desc>
+
+  <defs>
+    <linearGradient id="city-forest-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#131f1c"/><stop offset=".58" stop-color="#1d2d27"/><stop offset="1" stop-color="#354b3d"/></linearGradient>
+    <linearGradient id="city-forest-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9c28c"/><stop offset=".42" stop-color="#b99a55"/><stop offset=".72" stop-color="#657254"/><stop offset="1" stop-color="#b99a55"/></linearGradient>
+    <linearGradient id="city-forest-paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d9c28c"/><stop offset="1" stop-color="#b99a55"/></linearGradient>
+    <radialGradient id="city-forest-glow"><stop stop-color="#d9c28c" stop-opacity=".5"/><stop offset=".32" stop-color="#b99a55" stop-opacity=".22"/><stop offset="1" stop-color="#b99a55" stop-opacity="0"/></radialGradient>
+    <pattern id="city-forest-grain" width="17" height="15" patternUnits="userSpaceOnUse"><path d="M0 3h17M5 0v15M0 13 17 2" fill="none" stroke="#d9c28c" stroke-opacity=".032" stroke-width=".7"/></pattern>
+    <filter id="city-forest-shadow" x="-30%" y="-30%" width="170%" height="175%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#070b09" flood-opacity=".72"/></filter>
+  </defs>
+  <rect width="240" height="300" rx="8" fill="url(#city-forest-bg)"/>
+  <rect x="7" y="7" width="226" height="286" rx="5" fill="url(#city-forest-grain)" stroke="#b99a55" stroke-width="2"/>
+  <rect x="12" y="12" width="216" height="276" rx="3" fill="none" stroke="#d9c28c" stroke-opacity=".22"/>
+  <g fill="none" stroke="#b99a55" stroke-width="1.5" stroke-linecap="round">
+    <path d="M20 49c22-5 39-18 47-37M220 49c-22-5-39-18-47-37M20 251c22 5 39 18 47 37M220 251c-22 5-39 18-47 37"/>
+    <path d="M20 79V22h57M220 79V22h-57M20 221v57h57M220 221v57h-57" stroke-opacity=".38"/>
+  </g>
+  <g fill="#b99a55"><path d="m20 19 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Zm-200 250 8 6-8 6-8-6Zm200 0 8 6-8 6-8-6Z"/></g>
+
+  <g filter="url(#city-forest-shadow)"><rect x="28" y="34" width="184" height="205" rx="77" fill="#070b09" stroke="url(#city-forest-gold)" stroke-width="6"/><rect x="36" y="42" width="168" height="189" rx="68" fill="#1d2d27" stroke="#657254" stroke-width="2"/></g>
+  
+    <path d="M37 43h166v188H37Z" fill="url(#city-forest-bg)"/><circle cx="171" cy="73" r="24" fill="#d9c28c"/><circle cx="181" cy="64" r="23" fill="#1d2d27"/>
+    <path d="M38 221V139h29v-32h30v51h24V82h33v38h48v101Z" fill="#354b3d"/>
+    <path d="M49 153h8v12h-8Zm0 22h8v12h-8Zm27-55h9v12h-9Zm0 23h9v12h-9Zm57-46h9v13h-9Zm0 25h9v13h-9Zm35 12h12v14h-12Zm0 27h12v14h-12Z" fill="#d9c28c" opacity=".78"/>
+    <path d="M38 221c35-31 66-35 92-13 25-25 48-31 72-16v39H38Z" fill="#131f1c"/><path d="M43 226c32-25 61-28 87-8 24-21 46-26 67-13" fill="none" stroke="#b99a55" stroke-width="4"/>
+    <path d="M119 42v189" stroke="#b99a55" stroke-opacity=".65" stroke-width="3"/>
+  <path d="M22 246h196v38H22Z" fill="#1d2d27" stroke="#b99a55" stroke-width="2"/><path d="M31 256h178M31 274h178" stroke="#b99a55" stroke-opacity=".5"/>
+  <circle cx="120" cy="265" r="9" fill="#354b3d" stroke="#b99a55" stroke-width="2"/><path d="m120 258 2.5 5 5.5 2-5.5 2-2.5 5-2.5-5-5.5-2 5.5-2Z" fill="#d9c28c"/>
+</svg>
