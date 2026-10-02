@@ -1,4 +1,5 @@
-import { prepareHtmlDraft } from './html-draft.js';
+import { prepareHtmlDraft, draftText, textDraft } from './html-draft.js?v=0.6.0-final';
+import { createWorkStore } from './work-store.js?v=0.6.0-final';
 import {
     BUILTIN_COVER_LIBRARY,
     COVER_LIBRARY_VERSION,
@@ -279,6 +280,320 @@ let saveSettings = () => {};
 let keydownHandler;
 let pendingImport = null;
 let generationInFlight = false;
+let closeTimer;
+let workStore;
+let worksReady;
+let works = [];
+let session = null;
+let sessionWrites = Promise.resolve();
+let writeInFlight = false;
+let storageMessage = '';
+let workspaceDrawer = '';
+let workspaceFavorites = false;
+let sendTarget = null;
+let sessionSaveTimer;
+let sessionMutation = 0;
+let pendingSaves = 0;
+
+function newId() {
+    return globalThis.crypto?.randomUUID?.() || `work-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function newSession(play = selectedPlay()) {
+    return {
+        id: '__session__', work: null, chapter: 0, editing: false, dirty: false,
+        form: { playId: play?.id || '', title: play?.title || '我的小剧场', requirements: play?.description || '',
+            note: settings.directorNote || '', mode: settings.mode, continueContext: settings.continueContext,
+            beautification: settings.beautificationEnabled ? settings.beautificationMode : 'off' },
+        sequel: '',
+    };
+}
+
+function normalizeWork(entry) {
+    return { ...entry, id: entry.id || newId(), revision: entry.revision || 1, favorite: Boolean(entry.favorite),
+        writes: entry.writes || [], chapters: entry.chapters || (entry.html ? [{ title: '第一篇', html: entry.html }] : []) };
+}
+
+async function ensureWorks() {
+    if (worksReady) return worksReady;
+    worksReady = (async () => {
+        settings.workStoreId ||= newId();
+        saveSettings();
+        workStore = createWorkStore(settings.workStoreId);
+        // Copy old records without deleting their original HTML from host settings.
+        for (const entry of settings.history) {
+            entry.id ||= newId();
+            if (!await workStore.get(entry.id)) await workStore.put(normalizeWork(entry));
+        }
+        works = (await workStore.list()).map(normalizeWork);
+        session = await workStore.get('__session__') || newSession();
+        if (session.work) session.work = normalizeWork(session.work);
+        storageMessage = session.dirty ? '编辑草稿已恢复，记得保存作品' : session.work ? '已恢复本机保存的作品' : '';
+        saveSettings();
+    })().catch(error => {
+        worksReady = null;
+        session ||= newSession();
+        storageMessage = `作品库暂时不可用：${error.message}。生成后可先下载。`;
+    });
+    return worksReady;
+}
+
+function queueSessionSave() {
+    clearTimeout(sessionSaveTimer);
+    sessionSaveTimer = null;
+    if (!session || !workStore) return Promise.resolve(false);
+    const value = clone(session);
+    pendingSaves++;
+    sessionWrites = sessionWrites.catch(() => {}).then(() => workStore.put(value)).then(() => {
+        storageMessage = session.dirty ? '编辑草稿已保存在本机' : '草稿已保存在本机';
+        updateWorkspaceStatus();
+        return true;
+    }).catch(error => {
+        storageMessage = `保存失败：${error.message}。请先下载备份。`;
+        updateWorkspaceStatus();
+        return false;
+    }).finally(() => pendingSaves--);
+    return sessionWrites;
+}
+
+function updateWorkspaceStatus() {
+    const status = document.querySelector('#mit-work-status');
+    if (status) status.textContent = generationInFlight ? '正在创作，可关闭剧场稍后回来查看…' : storageMessage;
+}
+
+function targetIdentity(context = getContext()) {
+    if (!context?.chatId) return null;
+    const character = context.characters?.[context.characterId];
+    const target = { chatId: String(context.chatId), groupId: String(context.groupId || ''),
+        avatar: character?.avatar || '', name: context.name2 || character?.name || '当前角色' };
+    target.key = JSON.stringify([target.groupId || target.avatar || target.name, target.chatId]);
+    return target;
+}
+
+function currentWork() { return session?.work; }
+
+async function usePlay(play) {
+    if (!play || generationInFlight || writeInFlight) return;
+    captureWorkspace();
+    if (currentWork() && !await saveCurrentWork()) return;
+    session = newSession(play); workspaceDrawer = '';
+    await queueSessionSave(); showWorkspace();
+}
+
+function captureWorkspace() {
+    if (!session) return;
+    const before = JSON.stringify([session.form, session.sequel]);
+    let changed = false;
+    const form = document.querySelector('#mit-work-form');
+    if (form) {
+        session.form.title = form.elements.title.value;
+        session.form.requirements = form.elements.requirements.value;
+        session.form.note = form.elements.note.value;
+        session.form.mode = form.elements.mode.value;
+        session.form.continueContext = form.elements.continueContext.checked;
+        session.form.beautification = form.elements.beautification.value;
+    }
+    const editor = document.getElementById('mit-work-editor');
+    if (editor && currentWork()) {
+        const chapter = currentWork().chapters[session.chapter];
+        if (chapter && editor.value !== (chapter.editText ?? draftText(chapter.html))) {
+            chapter.editText = editor.value;
+            session.dirty = true;
+            changed = true;
+        }
+    }
+    const sequel = document.getElementById('mit-sequel-requirement');
+    if (sequel) session.sequel = sequel.value;
+    if (currentWork() && session.form.title !== currentWork().title) session.dirty = true;
+    if (changed || before !== JSON.stringify([session.form, session.sequel])) sessionMutation++;
+}
+
+function materializeWork() {
+    const work = clone(currentWork());
+    if (!work) return null;
+    work.title = session.form.title.trim() || work.title;
+    work.form = clone(session.form);
+    work.chapters = work.chapters.map(chapter => ({ title: chapter.title,
+        html: chapter.editText === undefined ? chapter.html : textDraft(chapter.editText, chapter.title) }));
+    return work;
+}
+
+async function saveCurrentWork(capture = true) {
+    if (capture) captureWorkspace();
+    if (!currentWork()) return false;
+    const work = materializeWork();
+    const savingSession = session;
+    const savingMutation = sessionMutation;
+    if (session.dirty) work.revision++;
+    work.updatedAt = new Date().toISOString();
+    pendingSaves++;
+    try {
+        await workStore.put(work);
+        works = [work, ...works.filter(item => item.id !== work.id)];
+        if (session === savingSession && sessionMutation === savingMutation) {
+            session.work = clone(work); session.dirty = false;
+        } else if (session === savingSession) {
+            session.work.revision = work.revision;
+        }
+        await queueSessionSave();
+        storageMessage = session.dirty ? '作品已保存；新编辑仍保留在草稿中' : '作品已保存到本机';
+        updateWorkspaceStatus();
+        return true;
+    } catch (error) {
+        storageMessage = `保存失败：${error.message}。正文仍在，请先下载。`;
+        updateWorkspaceStatus();
+        return false;
+    } finally { pendingSaves--; }
+}
+
+function showWorkspace() {
+    if (!session) {
+        showSheet('lobby', '创作小剧场', '<p>正在打开作品库…</p>', 'mit-workspace-sheet');
+        ensureWorks().then(() => { if (document.getElementById(ROOT_ID)?.isConnected) showWorkspace(); });
+        return;
+    }
+    const work = currentWork();
+    const form = session.form;
+    const play = playById(form.playId);
+    const chapter = work?.chapters[session.chapter];
+    const disabled = generationInFlight || writeInFlight ? 'disabled' : '';
+    const workActionsDisabled = !chapter || generationInFlight || writeInFlight ? 'disabled' : '';
+    sendTarget = targetIdentity();
+    const written = work?.writes.some(item => item.target === sendTarget?.key && item.revision === work.revision && item.confirmed);
+    const drawer = workspaceDrawer === 'works' ? `
+        <div class="mit-work-list" tabindex="0" aria-label="我的作品">
+            <div class="mit-work-tools"><button data-action="work-filter">${workspaceFavorites ? '查看全部作品' : '只看收藏作品'}</button><button data-action="backup-works">导出作品备份</button><label class="mit-file-button">导入备份<input id="mit-work-import" type="file" accept=".json,application/json"></label></div>
+            <p class="mit-work-hint">作品保存在本机浏览器，换设备前请导出备份。</p>
+            ${works.filter(item => !workspaceFavorites || item.favorite).sort((a,b) => (b.updatedAt || b.startedAt || '').localeCompare(a.updatedAt || a.startedAt || '')).map(item => `<button class="mit-work-row" data-action="open-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}><strong>${item.favorite ? '★ ' : ''}${escapeHtml(item.title)}</strong><span>${item.chapters.length ? `${item.chapters.length} 篇 · ${escapeHtml(item.protagonist || '')}` : '旧版未保留正文'}</span></button>`).join('') || '<p>这里还没有作品。</p>'}
+        </div>` : '';
+    showSheet('lobby', work ? work.title : '创作小剧场', `
+        <div class="mit-work-tools"><button data-action="choose-play" ${disabled}>选剧目</button><button data-action="new-work" ${disabled}>自己写</button><button data-action="toggle-works">我的作品</button><span id="mit-work-status" role="status"></span></div>
+        ${drawer}
+        <details class="mit-work-request" ${work ? '' : 'open'}><summary>${work ? '查看或调整写作要求' : '写下这一场故事'}</summary><form id="mit-work-form" class="mit-work-form">
+            <fieldset ${disabled}>
+                <div class="mit-work-heading"><span class="mit-work-cover" data-cover-play-id="${escapeHtml(play?.id || '')}" role="img"></span><label>故事标题<input name="title" maxlength="120" value="${escapeHtml(form.title)}" aria-label="故事标题"></label></div>
+                <label>这次想写什么<textarea name="requirements" rows="2" maxlength="6000" placeholder="写下情节、关系、氛围或结局要求…">${escapeHtml(form.requirements)}</textarea></label>
+                <div class="mit-work-tools"><label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${form.continueContext ? 'checked' : ''}>参考当前聊天</label><label>排版<select name="beautification"><option value="off" ${form.beautification === 'off' ? 'selected' : ''}>简洁</option><option value="static" ${form.beautification === 'static' ? 'selected' : ''}>静态</option><option value="dynamic" ${form.beautification === 'dynamic' ? 'selected' : ''}>动态</option></select></label><button type="submit" class="mit-primary">${generationInFlight ? '正在创作…' : work ? '另写一版' : '生成完整故事'}</button></div>
+                <details class="mit-work-advanced"><summary>更多写作设置</summary><label>演出方式<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode=>`<option ${form.mode===mode?'selected':''}>${mode}</option>`).join('')}</select></label><label>补充备注<textarea name="note" rows="2" maxlength="1000">${escapeHtml(form.note)}</textarea></label></details>
+            </fieldset>
+        </form></details>
+        ${work ? `<section class="mit-work-result" aria-label="作品正文">
+            <div class="mit-work-tools"><label>篇章<select id="mit-work-chapter" ${disabled}>${work.chapters.map((item,i)=>`<option value="${i}" ${session.chapter===i?'selected':''}>${escapeHtml(item.title)}</option>`).join('')}</select></label><button data-action="edit-work" ${workActionsDisabled}>${session.editing ? '阅读' : '编辑正文'}</button><span>${escapeHtml(work.protagonist || '')} · 第 ${work.revision} 版</span></div>
+            ${chapter ? (session.editing ? `<textarea id="mit-work-editor" aria-label="编辑作品正文" ${disabled}>${escapeHtml(chapter.editText ?? draftText(chapter.html))}</textarea>` : '<iframe class="mit-draft-frame" title="作品阅读" tabindex="0" sandbox="" referrerpolicy="no-referrer"></iframe>') : '<p>这条旧记录的正文已被旧版裁掉，无法恢复。</p>'}
+            <div class="mit-work-tools"><button data-action="save-work" ${workActionsDisabled}>保存作品</button><button data-action="favorite-work" ${workActionsDisabled}>${work.favorite?'★ 已收藏作品':'☆ 收藏作品'}</button><button data-action="sequel-work" ${workActionsDisabled}>继续创作</button><button data-action="download-work" ${chapter?'':'disabled'}>下载作品</button><button data-action="write-work" ${workActionsDisabled || (written && !session.dirty?'disabled':'')}>${written && !session.dirty ? '已写入此聊天' : '写入聊天'}</button></div>
+            ${session.sequelOpen ? `<div class="mit-sequel"><label>后续篇章要求<textarea id="mit-sequel-requirement" rows="2" maxlength="3000" ${disabled} placeholder="已有故事会保留，从它的结局继续写…">${escapeHtml(session.sequel || '')}</textarea></label><button class="mit-primary" data-action="generate-sequel" ${disabled}>${generationInFlight ? '正在创作…' : '生成后续篇章'}</button></div>` : ''}
+            <p class="mit-work-hint">${sendTarget ? `写入目标：${escapeHtml(sendTarget.name)} · ${escapeHtml(sendTarget.chatId)}。` : '打开角色聊天后可写入。'}仅点击写入按钮才会新增消息。</p>
+        </section>` : '<p class="mit-work-empty">把想发生的故事写在上方。落幕之后，仍可以接着写。</p>'}
+    `, 'mit-workspace-sheet');
+    const cover = document.querySelector('.mit-work-cover');
+    if (play) applyCover(cover, play); else if (cover) cover.hidden = true;
+    const frame = document.querySelector('#mit-root .mit-work-result iframe');
+    if (frame && chapter) frame.srcdoc = prepareHtmlDraft(chapter.editText === undefined ? chapter.html : textDraft(chapter.editText, chapter.title), work.title);
+    updateWorkspaceStatus();
+}
+
+function downloadFile(content, name, type) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const link = document.createElement('a');
+    link.href = url; link.download = name.replace(/[<>:"/\\|?*]/g, '_'); link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function workText(work) {
+    return work.chapters.map(chapter => `${chapter.title}\n\n${draftText(chapter.html)}`).join('\n\n');
+}
+
+async function writeCurrentWork() {
+    if (writeInFlight || generationInFlight || !currentWork()?.chapters.length) return;
+    const expected = sendTarget;
+    if (!expected || targetIdentity()?.key !== expected.key) {
+        showWorkspace(); return toast('聊天已切换，请核对新目标后再点击写入', 'info');
+    }
+    writeInFlight = true;
+    showWorkspace();
+    try {
+        if (!await saveCurrentWork()) return;
+        const context = getContext();
+        if (targetIdentity(context)?.key !== expected.key) throw new Error('聊天已切换，请重新核对目标');
+        if (!Array.isArray(context.chat) || !context.addOneMessage || !context.saveChat || !context.getRequestHeaders) throw new Error('当前酒馆缺少写入或保存核验能力');
+        const work = currentWork();
+        const matches = message => message?.extra?.[THEATRE_MESSAGE_KEY]?.workId === work.id && message.extra[THEATRE_MESSAGE_KEY].revision === work.revision;
+        const prior = work.writes.find(item => item.target === expected.key && item.revision === work.revision && item.confirmed);
+        if (prior) return toast('这个版本已经写入此聊天', 'info');
+        let message = context.chat.find(matches);
+        if (!message) {
+            message = { name: work.protagonist || context.name2, is_user: false, is_system: false,
+                send_date: new Date().toISOString(), mes: `[无名剧场 · ${work.title}]\n\n${workText(work).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}`,
+                extra: { [THEATRE_MESSAGE_KEY]: { workId: work.id, revision: work.revision } } };
+            context.chat.push(message);
+            context.addOneMessage(message);
+        }
+        // The host save is asynchronous and can swallow failures. Read back the named chat.
+        await context.saveChat();
+        const response = await fetch(expected.groupId ? '/api/chats/group/get' : '/api/chats/get', {
+            method: 'POST', headers: context.getRequestHeaders(),
+            body: JSON.stringify(expected.groupId ? { id: expected.chatId } : { ch_name: expected.name, file_name: expected.chatId, avatar_url: expected.avatar }),
+        });
+        const saved = response.ok ? await response.json() : null;
+        if (!Array.isArray(saved) || !saved.some(matches)) throw new Error('消息已显示，尚未确认保存；回到此聊天再次点击可重试保存，不会重复新增');
+        work.writes.push({ target: expected.key, chatId: expected.chatId, revision: work.revision, confirmed: true, at: new Date().toISOString() });
+        await workStore.put(clone(work));
+        works = works.map(item => item.id === work.id ? clone(work) : item);
+        await queueSessionSave();
+        toast('作品已写入目标聊天并核实保存', 'success');
+    } catch (error) { toast(error.message, 'error'); }
+    finally { writeInFlight = false; if (document.getElementById(ROOT_ID)?.classList.contains('is-open')) showWorkspace(); }
+}
+
+async function handleWorkspaceAction(action, target) {
+    const actions = ['choose-play','return-work','new-work','toggle-works','open-work','work-filter','save-work','edit-work','favorite-work','sequel-work','generate-sequel','download-work','write-work','backup-works'];
+    if (!actions.includes(action)) return false;
+    captureWorkspace();
+    if ((generationInFlight || writeInFlight) && !['toggle-works','work-filter','download-work','backup-works'].includes(action)) return true;
+    if (action === 'choose-play') { await queueSessionSave(); closeSheet(); setCurrentView('lobby'); renderLobbyState(); return true; }
+    if (action === 'new-work') {
+        if (currentWork() && !await saveCurrentWork()) return true;
+        session = newSession(null); session.form.requirements = ''; workspaceDrawer = '';
+    }
+    if (action === 'toggle-works') workspaceDrawer = workspaceDrawer ? '' : 'works';
+    if (action === 'work-filter') workspaceFavorites = !workspaceFavorites;
+    if (action === 'open-work') {
+        if (currentWork() && !await saveCurrentWork()) return true;
+        const work = works.find(item=>item.id===target.dataset.entryId);
+        if (work) { session = newSession(playById(work.playId)); session.work=clone(work); session.form={...session.form,...work.form,title:work.title}; workspaceDrawer=''; }
+    }
+    if (action === 'save-work') await saveCurrentWork();
+    if (action === 'edit-work') session.editing = !session.editing;
+    if (action === 'favorite-work' && currentWork()) { currentWork().favorite = !currentWork().favorite; await saveCurrentWork(); }
+    if (action === 'sequel-work') session.sequelOpen = !session.sequelOpen;
+    if (action === 'generate-sequel') { await runWorkspace(true); return true; }
+    if (action === 'write-work') { await writeCurrentWork(); return true; }
+    if (action === 'download-work') {
+        const work = materializeWork();
+        if (work) downloadFile(work.chapters.length === 1 ? prepareHtmlDraft(work.chapters[0].html, work.title) : textDraft(workText(work),work.title), `${work.title}.html`, 'text/html;charset=utf-8');
+        return true;
+    }
+    if (action === 'backup-works') {
+        if (currentWork()) await saveCurrentWork();
+        downloadFile(JSON.stringify({format:'interlude-theatre-works',version:1,works: [...works.filter(item=>item.id!==currentWork()?.id), ...(currentWork()?[materializeWork()]:[])]},null,2), '无名剧场-作品备份.json', 'application/json');
+        return true;
+    }
+    await queueSessionSave(); showWorkspace(); return true;
+}
+
+async function importWorks(file) {
+    if (!file) return;
+    try {
+        const backup = JSON.parse(await file.text());
+        if (backup.format !== 'interlude-theatre-works' || !Array.isArray(backup.works)) throw new Error('请选择无名剧场导出的作品备份');
+        const imported = backup.works.map(raw => {
+            if (!raw || typeof raw.title !== 'string' || !Array.isArray(raw.chapters)) throw new Error('备份内有不完整的作品');
+            return normalizeWork({ ...raw, id: newId(), writes: [], chapters: raw.chapters.map(chapter=>({title:String(chapter.title || '篇章'),html:prepareHtmlDraft(chapter.html,raw.title)})) });
+        });
+        for (const work of imported) { await workStore.put(work); works.push(work); }
+        showWorkspace(); toast(`已导入 ${imported.length} 部作品，原作品保留`, 'success');
+    } catch(error) { toast(`导入失败：${error.message}`, 'error'); }
+}
 
 function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -613,7 +928,7 @@ function createRoot() {
                 <section class="mit-program-panel" aria-label="今晚的节目单">
                     <header class="mit-program-heading">
                         <h2>今晚的节目单</h2>
-                        <div class="mit-selection-summary"><div class="mit-current-title" aria-live="polite"></div><small>再点已选卡片，查看或修改描述</small></div>
+                        <div class="mit-selection-summary"><div class="mit-current-title" aria-live="polite"></div><small>选择剧目后，填写这一场的故事要求</small></div>
                     </header>
                     <div class="mit-program-toolbar">
                         <div class="mit-filter-group" role="group" aria-label="剧目筛选">
@@ -626,10 +941,10 @@ function createRoot() {
                         </select>
                         <span class="mit-program-count"></span>
                     </div>
-                    <div class="mit-program-scroll"><div id="mit-program-grid" class="mit-program-grid"></div></div>
+                    <div class="mit-program-scroll" tabindex="0"><div id="mit-program-grid" class="mit-program-grid"></div></div>
                     <div class="mit-lobby-actions">
                         <button class="mit-random" type="button" data-action="random" aria-label="随机抽取当前筛选中的一个剧目">随机抽取</button>
-                        <button class="mit-start" type="button" data-action="confirm-start" aria-label="拉开帷幕">拉开帷幕</button>
+                        <button class="mit-start" type="button" data-action="return-work">返回创作</button><button class="mit-random" type="button" data-action="manage-plays">管理剧目</button>
                     </div>
                 </section>
                 <div class="mit-sheet-host" aria-live="polite"></div>
@@ -644,17 +959,19 @@ function createRoot() {
     bindRootEvents(root);
     renderLobbyState();
     setCurrentView('lobby');
+    showWorkspace();
     requestAnimationFrame(() => root.classList.add('is-open'));
     return root;
 }
 
 function openTheatre() {
+    clearTimeout(closeTimer);
     const existing = document.getElementById(ROOT_ID);
     if (existing) {
         existing.classList.add('is-open');
         return;
     }
-    hydrateSettings();
+    if (!settings) hydrateSettings();
     createRoot();
     keydownHandler = (event) => {
         if (event.key !== 'Escape') return;
@@ -668,9 +985,13 @@ function openTheatre() {
 function closeTheatre() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
+    captureWorkspace();
+    queueSessionSave();
     root.classList.remove('is-open');
-    setTimeout(() => root.remove(), 180);
-    if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
+    closeTimer = setTimeout(() => {
+        root.remove();
+        if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
+    }, 180);
 }
 
 function closeSheet() {
@@ -696,25 +1017,29 @@ function setCurrentView(view) {
 }
 
 function setView(view) {
+    captureWorkspace();
+    queueSessionSave();
     if (view === 'lobby') {
-        closeSheet();
-        setCurrentView('lobby');
-        renderLobbyState();
-        return;
+        return showWorkspace();
     }
     if (view === 'library') return showLibrary();
-    if (view === 'history') return showHistory();
-    if (view === 'director') return showDirector();
+    if (view === 'history') { workspaceDrawer = 'works'; return showWorkspace(); }
+    if (view === 'director') {
+        showWorkspace();
+        const options = document.querySelector('.mit-work-advanced');
+        if (options) options.open = true;
+    }
 }
 
 function showSheet(view, title, body, className = '') {
     document.getElementById(ROOT_ID)?.classList.add('has-sheet');
     const host = document.querySelector(`#${ROOT_ID} .mit-sheet-host`);
+    if (!host) return;
     setCurrentView(view);
     host.innerHTML = `
         <section class="mit-sheet ${className}" aria-label="${escapeHtml(title)}">
             <header><h2>${escapeHtml(title)}</h2></header>
-            <div class="mit-sheet-body">${body}</div>
+            <div class="mit-sheet-body" tabindex="0">${body}</div>
         </section>`;
     host.querySelector('button, input, select, textarea')?.focus();
 }
@@ -740,7 +1065,7 @@ function showLibrary() {
 
     showSheet('library', '剧目库', `
         <div class="mit-library-toolbar">
-            <div><strong>${settings.library.length}</strong> 个剧目 · <strong>${settings.favoriteIds.length}</strong> 个收藏</div>
+            <div><button type="button" data-action="return-work">返回创作</button> · <strong>${settings.library.length}</strong> 个剧目 · <strong>${settings.favoriteIds.length}</strong> 个收藏</div>
             <div class="mit-library-tools"><input id="mit-library-search" type="search" placeholder="搜剧名或 @作者"><label class="mit-import-button">导入剧目簿<input id="mit-import-file" type="file" accept="application/json,.json" multiple></label></div>
         </div>
         <p class="mit-help">这里负责导入和管理剧目。选择文件后会先显示只读预览，确认收录后才进入第一页的完整剧目列表。</p>
@@ -751,106 +1076,14 @@ function showLibrary() {
     });
 }
 
-function showHistory() {
-    const rows = settings.history.length ? settings.history.map((entry) => `
-        <article class="mit-history-item">
-            <div><strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(entry.protagonist || '当前角色')} · ${escapeHtml(entry.mode)}</span></div>
-            <time>${escapeHtml(new Date(entry.startedAt).toLocaleString())}</time>
-            ${entry.html ? `<button type="button" data-action="view-draft" data-entry-id="${escapeHtml(entry.id)}">查看 HTML</button>` : ''}
-            <button type="button" data-action="replay" data-play-id="${escapeHtml(entry.playId)}">再次上演</button>
-        </article>
-    `).join('') : '<div class="mit-empty">还没有演出记录。第一次拉开帷幕后会出现在这里。</div>';
-    showSheet('history', '演出记录', `<div class="mit-history-list">${rows}</div>`, 'mit-history-sheet');
-}
-
-function showDraft(entry) {
-    if (!entry?.html) return toast('这份记录没有保存 HTML，请重新制作', 'error');
-    showSheet('history', entry.title, `
-        <p class="mit-draft-note">${escapeHtml(entry.protagonist)} · ${escapeHtml(new Date(entry.startedAt).toLocaleString())} · ${entry.continueContext ? '已读取开演时的聊天上下文' : '独立番外'} · 未发送到聊天</p>
-        <iframe class="mit-draft-frame" title="演出 HTML 预览" sandbox="" referrerpolicy="no-referrer"></iframe>
-        <div class="mit-confirm-actions"><button type="button" data-action="replay" data-play-id="${escapeHtml(entry.playId)}">读取最新上下文再制作</button><button type="button" class="mit-primary" data-action="download-draft" data-entry-id="${escapeHtml(entry.id)}">下载 HTML</button></div>
-    `, 'mit-draft-sheet');
-    document.querySelector(`#${ROOT_ID} .mit-draft-frame`).srcdoc = prepareHtmlDraft(entry.html, entry.title);
-}
-
-function showDirector() {
-    const context = getContext();
-    const suggested = settings.protagonist || context?.name2 || '';
-    showSheet('director', '导演室', `
-        <form id="mit-director-form" class="mit-director-form">
-            <label>当前主演<input name="protagonist" maxlength="60" value="${escapeHtml(suggested)}" placeholder="默认使用当前角色"></label>
-            <label>演出模式<select name="mode">
-                ${['沉浸叙事', '轻喜互动', '悬疑调查', '情感慢燃', '高速冲突', '舞台剧腔调'].map((mode) => `<option ${settings.mode === mode ? 'selected' : ''}>${mode}</option>`).join('')}
-            </select></label>
-            <label>导演备注<textarea name="directorNote" maxlength="1000" rows="5" placeholder="例如：更多对白、控制在三幕内、结尾留选择……">${escapeHtml(settings.directorNote)}</textarea></label>
-            <fieldset class="mit-beautification-settings">
-                <legend>聊天承接</legend>
-                <label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${settings.continueContext ? 'checked' : ''}> 承接当前聊天</label>
-                <p>开启时读取最近主聊天的关系、情绪和事件背景；关闭时只读取角色卡与 Persona，作为独立番外开演。</p>
-            </fieldset>
-            <fieldset class="mit-beautification-settings">
-                <legend>默认美化提示词</legend>
-                <label class="mit-checkbox-row"><input name="beautificationEnabled" type="checkbox" ${settings.beautificationEnabled ? 'checked' : ''}> 开演时启用默认美化</label>
-                <label>默认档位<select name="beautificationMode">
-                    <option value="static" ${settings.beautificationMode === 'static' ? 'selected' : ''}>静态 · 简洁克制</option>
-                    <option value="dynamic" ${settings.beautificationMode === 'dynamic' ? 'selected' : ''}>动态 · 更长、更华丽、约束更多</option>
-                </select></label>
-                <p>关闭后只使用剧目自带的提示词；开演确认页仍可临时切换本次档位。</p>
-            </fieldset>
-            <p>读取主聊天时会排除历史小剧场消息；两种方式都会一次写完完整番外，人物言行依据角色卡与 Persona。</p>
-            <button class="mit-primary" type="submit">保存导演设置</button>
-        </form>
-    `, 'mit-director-sheet');
-}
-
-function showStartConfirmation() {
-    const play = selectedPlay();
-    if (!play) return toast('请先从剧目库选择一个剧目', 'error');
-    const context = getContext();
-    const protagonist = settings.protagonist || context?.name2 || '当前角色';
-    showSheet('lobby', '今晚开演', `
-        <div class="mit-confirm-play">
-            <div class="mit-confirm-ticket">✦ 今晚，你是故事的主角 ✦</div>
-            <h3>${escapeHtml(play.title)}</h3>
-            <p>${escapeHtml(play.description)}</p>
-            <dl><div><dt>✧ 特邀主演</dt><dd>${escapeHtml(protagonist)}</dd></div><div><dt>✧ 演出方式</dt><dd>${escapeHtml(settings.mode || play.mode)}</dd></div></dl>
-            <div class="mit-run-options">
-                <label class="mit-run-context"><input id="mit-run-context" type="checkbox" ${settings.continueContext ? 'checked' : ''}> 承接当前聊天</label>
-                <label class="mit-run-beautification">本次美化<select id="mit-run-beautification">
-                    <option value="off" ${settings.beautificationEnabled ? '' : 'selected'}>简洁 HTML</option>
-                    <option value="static" ${settings.beautificationEnabled && settings.beautificationMode === 'static' ? 'selected' : ''}>静态</option>
-                    <option value="dynamic" ${settings.beautificationEnabled && settings.beautificationMode === 'dynamic' ? 'selected' : ''}>动态</option>
-                </select></label>
-            </div>
-            <div class="mit-confirm-actions"><button type="button" data-action="close-sheet">再看看</button><button class="mit-primary" type="button" data-action="start">确认拉开帷幕</button></div>
-        </div>
-    `, 'mit-confirm-sheet');
-}
-
-function showPlayDetails() {
-    const play = selectedPlay();
-    if (!play) return;
-    showSheet('lobby', '剧目手记', `
-        <div class="mit-play-details">
-            <span class="mit-detail-cover" data-cover-play-id="${escapeHtml(play.id)}" role="img"></span>
-            <div class="mit-detail-copy"><span class="mit-detail-kicker">故事，从这里开始</span><h3>${escapeHtml(play.title)}</h3>
-            <label for="mit-play-description">剧目描述</label>
-            <textarea id="mit-play-description" rows="5" maxlength="6000">${escapeHtml(play.description)}</textarea>
-            <p>保存后，大厅、剧目库和开演页会显示这份描述。</p></div>
-            <div class="mit-confirm-actions"><button type="button" data-action="close-sheet">取消</button><button type="button" class="mit-primary" data-action="save-description" data-play-id="${escapeHtml(play.id)}">保存描述</button></div>
-        </div>`, 'mit-detail-sheet');
-    const cover = document.querySelector(`#${ROOT_ID} .mit-detail-cover`);
-    if (cover) applyCover(cover, play);
-}
-
-function buildOpeningCue(play, beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext, context = getContext()) {
+function buildOpeningCue(play, beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext, context = getContext(), options = settings) {
     const protagonist = settings.protagonist || context?.name2 || '{{char}}';
     const acts = play.acts?.length ? play.acts.join(' / ') : '开幕 / 转折 / 谢幕';
     const beautification = beautificationMode === 'off' ? '' : `\n默认美化要求：\n${BEAUTIFICATION_PROFILES[beautificationMode]}`;
     const contextRule = continueContext
         ? '承接当前聊天：结合最近主线中的人物关系、情绪与已知事件，但不要把本场新增事件宣布为主线既定事实。'
         : '独立番外：不延续最近主线事件，只保持角色设定、Persona 与既有人物关系一致。';
-    return `[无名剧场 · ${play.title}]\n请开始一场独立于主线的小剧场。\n主演：${protagonist}\n演出模式：${settings.mode || play.mode}\n上下文方式：${contextRule}\n三幕结构：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n导演备注：${settings.directorNote || '保持画面感与角色一致性。'}${beautification}\n演出规则：从第一幕的可感知场景直接开演；保持角色身份、关系与说话方式一致；依据角色卡、Persona 与已有关系描写双方的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；不要复述本条指令；本场内容不改变主线事实。\n输出完整 HTML 文档，包含正文与内嵌 CSS，不要 Markdown 代码围栏或解释。适配手机，奶油纸色与鼠尾草绿，保留清晰留白。所有文字、标题、链接均无下划线或底部装饰线。仅用 HTML/CSS，可用 details/summary 展开细节；动态档位使用 CSS 动画并尊重减少动态设置。不要脚本、表单、外部资源或链接。内容将在独立预览中展示，不发送到聊天。`;
+    return `[无名剧场 · ${play.title}]\n请开始一场独立于主线的小剧场。\n主演：${protagonist}\n演出模式：${options.mode || play.mode}\n上下文方式：${contextRule}\n三幕结构：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n导演备注：${options.directorNote || '保持画面感与角色一致性。'}${beautification}\n演出规则：从第一幕的可感知场景直接开演；保持角色身份、关系与说话方式一致；依据角色卡、Persona 与已有关系描写双方的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；不要复述本条指令；本场内容不改变主线事实。\n输出完整 HTML 文档，包含正文与内嵌 CSS，不要 Markdown 代码围栏或解释。适配手机，奶油纸色与鼠尾草绿，保留清晰留白。所有文字、标题、链接均无下划线或底部装饰线。隐藏全部滚动条外观，保留滚动。仅用 HTML/CSS，可用 details/summary 展开细节；动态档位使用 CSS 动画并尊重减少动态设置。不要脚本、表单、外部资源或链接。内容将在独立预览中展示，不发送到聊天。`;
 }
 
 function filterMainChatMessages(chat) {
@@ -873,7 +1106,7 @@ function filterMainChatMessages(chat) {
     return result;
 }
 
-function buildCharacterSystemPrompt(context, continueContext = settings.continueContext) {
+function buildCharacterSystemPrompt(context, continueContext = settings.continueContext, sequel = false) {
     const fields = context.getCharacterCardFields?.() || {};
     const activeCharacter = context.characters?.[context.characterId] || {};
     const alternateGreetings = Array.isArray(activeCharacter?.data?.alternate_greetings)
@@ -898,7 +1131,7 @@ function buildCharacterSystemPrompt(context, continueContext = settings.continue
         .map(([label, value]) => `【${label}】\n${String(value).trim()}`);
     return [
         '你正在 SillyTavern 中为当前角色与用户演出一次独立番外小剧场。',
-        continueContext
+        sequel ? '本次由用户明确要求创作后续篇章。给定前篇是已完成的故事，保留其事实与结局，从结局之后展开并写完新篇章，仅输出新增内容。' : continueContext
             ? '只把提供的主聊天快照当作人物关系、说话习惯与主线背景；不要续写或引用任何历史小剧场。'
             : '本次不提供主聊天快照；只依据角色卡、Persona 与剧目要求演出独立番外。',
         '本次任务是一次完成的完整番外故事：写出开端、发展、转折和明确结局；依据角色卡与 Persona 合理描写双方言行，并在故事内部完成选择。此完成方式优先于剧目、角色卡或聊天中要求等待用户回复、分轮互动的写作方式。严格保持人物一致性，本场新增事件仅属于番外。',
@@ -906,10 +1139,12 @@ function buildCharacterSystemPrompt(context, continueContext = settings.continue
     ].join('\n\n').slice(0, 24000);
 }
 
-function buildGenerationMessages(context, play, beautificationMode, continueContext = settings.continueContext, reservedCharacters = 0) {
+function buildGenerationMessages(context, play, beautificationMode, continueContext = settings.continueContext, reservedCharacters = 0, options = settings) {
     const mainChat = continueContext ? filterMainChatMessages(context.chat) : [];
-    const cue = context.substituteParams(buildOpeningCue(play, beautificationMode, continueContext, context));
+    let cue = context.substituteParams(buildOpeningCue(play, beautificationMode, continueContext, context, options));
+    if (options.previousText) cue += `\n\n【已完成前篇，仅作续写依据】\n${options.previousText}\n\n【用户的后续要求】\n${options.sequel}\n从前篇结局之后继续，完整写完新增篇章，前篇保持原样。`;
     const totalCharacterBudget = Math.max(18000, Math.min(90000, Math.max(0, Number(context.maxContext || 0) - 4096) * 3));
+    if (options.previousText && cue.length + reservedCharacters > totalCharacterBudget) throw new Error('前篇超出当前模型的上下文预算，请切换更大上下文后续写；原文已保留');
     const maxCharacters = Math.max(4000, totalCharacterBudget - reservedCharacters - cue.length);
     const selected = [];
     let usedCharacters = 0;
@@ -943,71 +1178,84 @@ function currentParticipantNames(context) {
     return name ? [name] : ['当前角色'];
 }
 
-async function startPerformance(play = selectedPlay(), beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext) {
+async function runWorkspace(sequel = false) {
+    captureWorkspace();
+    if (generationInFlight) return;
+    if (!session.form.requirements.trim() && !session.form.playId) return toast('先写一点故事要求吧', 'info');
+    if (sequel && !session.sequel?.trim()) return toast('写下后续篇章要求后再开始', 'info');
+    if (currentWork() && !await saveCurrentWork()) return;
+    const form = clone(session.form);
+    const original = playById(form.playId);
+    return startPerformance({ ...original, id: original?.id || 'custom', title: form.title.trim() || '我的小剧场',
+        description: form.requirements, prompt: original?.prompt || '根据用户要求创作。' }, form.beautification, form.continueContext,
+        { mode: form.mode, directorNote: form.note, form, previousWork: sequel ? clone(currentWork()) : null, sequel: session.sequel });
+}
+
+async function startPerformance(play = selectedPlay(), beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext, options = {}) {
     if (!play || generationInFlight) return;
+    generationInFlight = true;
+    await ensureWorks();
     const context = getContext();
     if (!context?.generateRaw || !context?.getCharacterCardFields || !context?.substituteParams) {
         toast('当前酒馆缺少小剧场所需的独立生成或上下文读取能力', 'error');
+        generationInFlight = false;
         return;
     }
-    if (!context.chatId && !context.groupId) return toast('请先打开一个角色或群聊', 'error');
+    if (!context.chatId) { generationInFlight = false; return toast('请先打开一个角色或群聊', 'error'); }
 
     const protagonist = settings.protagonist || context?.name2 || '当前角色';
-    const runId = globalThis.crypto?.randomUUID?.() || `show-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const runId = newId();
     const startedAt = new Date().toISOString();
-    const startButton = document.querySelector(`#${ROOT_ID} [data-action="start"]`);
-    generationInFlight = true;
-    if (startButton) {
-        startButton.disabled = true;
-        startButton.textContent = '正在开演…';
-    }
+    const source = targetIdentity(context);
+    const run = { mode: settings.mode || play.mode, directorNote: settings.directorNote, ...clone(options) };
+    const previous = run.previousWork;
+    if (previous) run.previousText = workText(previous);
+    const frozenPlay = clone(play);
+    if (document.getElementById(ROOT_ID)) showWorkspace();
     toast(continueContext ? '正在读取主聊天并准备舞台…' : '正在准备独立番外舞台…');
 
     try {
-        const systemPrompt = buildCharacterSystemPrompt(context, continueContext);
+        if (previous && (previous.source?.key ? previous.source.key !== source.key : previous.chatId !== context.chatId)) throw new Error('请切回这部作品的原聊天后续写，保持人物和背景一致');
+        const systemPrompt = buildCharacterSystemPrompt(context, continueContext, Boolean(previous));
         const output = await context.generateRaw({
-            prompt: buildGenerationMessages(context, play, beautificationMode, continueContext, systemPrompt.length),
+            prompt: buildGenerationMessages(context, frozenPlay, beautificationMode, continueContext, systemPrompt.length, run),
             systemPrompt,
             trimNames: false,
         });
-        const html = prepareHtmlDraft(output, play.title);
+        if (String(output || '').length > 300000) throw new Error('本次生成内容过长，请缩短篇幅后重试；已有作品保留');
+        const html = prepareHtmlDraft(output, frozenPlay.title);
 
         play.usageCount = Number(play.usageCount || 0) + 1;
         play.lastUsedAt = startedAt;
         play.usedBy ??= {};
         for (const name of currentParticipantNames(context)) play.usedBy[name] = Number(play.usedBy[name] || 0) + 1;
-        settings.history.unshift({
+        const entry = previous ? { ...previous, revision: previous.revision + 1, updatedAt: new Date().toISOString(),
+            chapters: [...previous.chapters, { title: `第 ${previous.chapters.length + 1} 篇`, html }] } : normalizeWork({
             id: runId,
-            html,
-            playId: play.id,
-            title: play.title,
+            chapters: [{ title: '第一篇', html }],
+            playId: frozenPlay.id,
+            title: frozenPlay.title,
             protagonist,
             participants: currentParticipantNames(context),
-            mode: settings.mode || play.mode,
+            mode: run.mode,
+            form: run.form || { ...session.form, mode:run.mode, note:run.directorNote, title:frozenPlay.title, requirements:frozenPlay.description },
+            source,
             continueContext,
             beautificationMode,
             chatId: context.chatId || '',
             startedAt,
         });
-        settings.history = settings.history.slice(0, 100);
-        // Bound persisted draft storage; older metadata remains available.
-        let draftCharacters = 0;
-        for (const entry of settings.history) {
-            draftCharacters += entry.html?.length || 0;
-            if (draftCharacters > 2000000) delete entry.html;
-        }
+        session.work = entry; session.chapter = entry.chapters.length - 1; session.editing = false; session.dirty = false;
+        session.form = { ...session.form, ...entry.form, title:entry.title }; session.sequelOpen = false; session.sequel = '';
+        await saveCurrentWork(false);
         saveSettings();
-        if (document.getElementById(ROOT_ID)?.classList.contains('is-open')) showDraft(settings.history[0]);
-        toast(`《${play.title}》已存入演出记录，聊天未发送`, 'success');
+        toast(`《${frozenPlay.title}》创作完成，聊天未发送`, 'success');
     } catch (error) {
         console.error(`[${EXTENSION_ID}] failed to start performance`, error);
         toast(`开演失败：${error?.message || '未知错误'}`, 'error');
-        if (startButton) {
-            startButton.disabled = false;
-            startButton.textContent = '确认拉开帷幕';
-        }
     } finally {
         generationInFlight = false;
+        if (document.getElementById(ROOT_ID)?.classList.contains('is-open')) showWorkspace();
     }
 }
 
@@ -1113,17 +1361,9 @@ function commitPendingImport() {
     toast(errors.length ? `已收录 ${imported} 个；另有 ${errors.length} 个文件未通过` : `已收录 ${imported} 个剧目`, errors.length ? 'error' : 'success');
 }
 
-function handleAction(action, target) {
-    if (action === 'view-draft') return showDraft(settings.history.find(entry => entry.id === target.dataset.entryId));
-    if (action === 'download-draft') {
-        const entry = settings.history.find(entry => entry.id === target.dataset.entryId);
-        if (!entry?.html) return;
-        const url = URL.createObjectURL(new Blob([prepareHtmlDraft(entry.html, entry.title)], { type: 'text/html;charset=utf-8' }));
-        const link = document.createElement('a');
-        link.href = url; link.download = `${entry.title.replace(/[<>:"/\\|?*]/g, '_')}.html`;
-        link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-        return;
-    }
+async function handleAction(action, target) {
+    if (await handleWorkspaceAction(action, target)) return;
+    if (action === 'manage-plays') return showLibrary();
     if (action === 'close') return closeTheatre();
     if (action === 'close-sheet') return setView('lobby');
     if (action === 'random') {
@@ -1135,24 +1375,7 @@ function handleAction(action, target) {
         renderLobbyState();
         return toast(`今晚抽到《${play.title}》`, 'success');
     }
-    if (action === 'save-description') {
-        const play = playById(target.dataset.playId);
-        const field = document.getElementById('mit-play-description');
-        if (!play || !field) return;
-        const description = field.value.trim();
-        if (!description) return toast('写一点剧目描述再保存吧', 'info');
-        play.description = description;
-        saveSettings();
-        renderLobbyState();
-        closeSheet();
-        return toast('剧目描述已保存', 'success');
-    }
-    if (action === 'confirm-start') return showStartConfirmation();
-    if (action === 'start') {
-        const runMode = document.querySelector(`#${ROOT_ID} #mit-run-beautification`)?.value || 'off';
-        const continueContext = document.querySelector(`#${ROOT_ID} #mit-run-context`)?.checked ?? settings.continueContext;
-        return startPerformance(selectedPlay(), ['static', 'dynamic'].includes(runMode) ? runMode : 'off', continueContext);
-    }
+    if (action === 'confirm-start') return usePlay(selectedPlay());
     if (action === 'set-filter') {
         settings.lobbyFilter = target.dataset.filter === 'favorites' ? 'favorites' : 'all';
         const visible = getVisiblePlays();
@@ -1175,8 +1398,7 @@ function handleAction(action, target) {
         if (!play) return;
         settings.selectedId = play.id;
         saveSettings();
-        setView('lobby');
-        return toast(`已选择《${play.title}》，可拉开帷幕`);
+        return usePlay(play);
     }
     if (action === 'delete-play') {
         const play = playById(target.dataset.playId);
@@ -1187,14 +1409,6 @@ function handleAction(action, target) {
         saveSettings();
         renderLobbyState();
         return showLibrary();
-    }
-    if (action === 'replay') {
-        const play = playById(target.dataset.playId);
-        if (!play) return toast('这个剧目已经不在剧目库中', 'error');
-        settings.selectedId = play.id;
-        saveSettings();
-        setView('lobby');
-        return toast(`已选择《${play.title}》，可以再次拉开帷幕`, 'success');
     }
     if (action === 'cancel-import') {
         pendingImport = null;
@@ -1215,8 +1429,7 @@ function bindRootEvents(root) {
         const card = event.target.closest('.mit-card-hotspot');
         if (card) {
             const play = playById(card.dataset.playId);
-            if (play && settings.selectedId === play.id) return showPlayDetails();
-            if (play) settings.selectedId = play.id;
+            if (play) { settings.selectedId = play.id; usePlay(play); }
             saveSettings();
             renderLobbyState();
             if (!play) toast('当前筛选下这里没有剧目', 'info');
@@ -1229,6 +1442,11 @@ function bindRootEvents(root) {
     });
 
     root.addEventListener('change', (event) => {
+        if (event.target.id === 'mit-work-import') importWorks(event.target.files[0]);
+        if (event.target.id === 'mit-work-chapter') {
+            captureWorkspace(); session.chapter = Number(event.target.value); queueSessionSave(); showWorkspace();
+        }
+        if (event.target.closest('#mit-work-form')) { captureWorkspace(); queueSessionSave(); }
         if (event.target.id === 'mit-import-file') prepareImportFiles([...event.target.files]);
         if (event.target.id === 'mit-lobby-sort') {
             settings.lobbySort = event.target.value === 'most-used' ? 'most-used' : 'latest';
@@ -1238,6 +1456,11 @@ function bindRootEvents(root) {
     });
 
     root.addEventListener('input', (event) => {
+        if (event.target.closest('.mit-workspace-sheet')) {
+            captureWorkspace();
+            storageMessage = '正在保存编辑草稿…'; updateWorkspaceStatus();
+            clearTimeout(sessionSaveTimer); sessionSaveTimer = setTimeout(queueSessionSave, 250);
+        }
         if (event.target.id !== 'mit-library-search') return;
         const query = event.target.value.trim().toLowerCase();
         root.querySelectorAll('.mit-library-item').forEach((item) => {
@@ -1246,6 +1469,7 @@ function bindRootEvents(root) {
     });
 
     root.addEventListener('submit', (event) => {
+        if (event.target.id === 'mit-work-form') { event.preventDefault(); runWorkspace(); return; }
         if (event.target.id !== 'mit-director-form') return;
         event.preventDefault();
         const data = new FormData(event.target);
@@ -1262,6 +1486,13 @@ function bindRootEvents(root) {
 }
 
 function addMenuButton() {
+    const sendForm = document.getElementById('leftSendForm');
+    if (sendForm && !document.getElementById('mit-quick-open')) {
+        const quick = document.createElement('button');
+        quick.id = 'mit-quick-open'; quick.type = 'button'; quick.textContent = '剧场';
+        quick.title = '打开无名剧场'; quick.addEventListener('click', openTheatre);
+        sendForm.append(quick);
+    }
     if (document.getElementById(MENU_ID)) return true;
     const menu = document.getElementById('extensionsMenu');
     if (!menu) return false;
@@ -1285,6 +1516,9 @@ function addMenuButton() {
 function init() {
     if (globalThis.__interludeTheatreInitialized) return;
     globalThis.__interludeTheatreInitialized = true;
+    window.addEventListener('beforeunload', event => {
+        if (generationInFlight || writeInFlight || sessionSaveTimer || pendingSaves) { event.preventDefault(); event.returnValue = ''; }
+    });
     if (!addMenuButton()) {
         const observer = new MutationObserver(() => {
             if (addMenuButton()) observer.disconnect();

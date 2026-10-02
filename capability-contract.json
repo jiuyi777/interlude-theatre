@@ -54,6 +54,34 @@
       "symbol": "context.substituteParams",
       "required": true,
       "fallback": null
+    },
+    {
+      "id": "message-render",
+      "owner": "sillytavern",
+      "symbol": "context.addOneMessage",
+      "required": false,
+      "fallback": "Disable manual chat writes; keep workbench available."
+    },
+    {
+      "id": "chat-save",
+      "owner": "sillytavern",
+      "symbol": "context.saveChat",
+      "required": false,
+      "fallback": "Disable manual chat writes."
+    },
+    {
+      "id": "save-readback-headers",
+      "owner": "sillytavern",
+      "symbol": "context.getRequestHeaders",
+      "required": false,
+      "fallback": "Disable manual chat writes."
+    },
+    {
+      "id": "work-storage",
+      "owner": "browser",
+      "symbol": "indexedDB",
+      "required": true,
+      "fallback": "Keep generated text visible and allow HTML download; report failed persistence."
     }
   ]
 }

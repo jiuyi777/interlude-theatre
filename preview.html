@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>无名剧场 · 插件预览</title>
+    <link rel="stylesheet" href="./style.css?rev=workbench-v060">
+    <style>
+        html, body { margin: 0; min-height: 100%; background: #140b08; font-family: system-ui, sans-serif; }
+        #preview-chat { max-width: 760px; margin: 40px auto; padding: 24px; color: #ead4a6; }
+        #preview-chat h1 { font: 26px Georgia, serif; }
+        #preview-chat > p { color: #bda98c; }
+        .preview-message { margin: 18px 0; padding: 22px; border: 1px solid #76563c; border-radius: 8px; background: #251a14; }
+        .preview-message h2 { font-size: 14px; color: #c9ae7e; }
+        .preview-message p { white-space: pre-wrap; line-height: 1.9; }
+        .preview-message.is-theatre { background: #eee0bf; color: #47362a; border: 1px solid #b99a67; }
+        .preview-message.is-theatre h2 { color: #784b35; }
+        .preview-message.is-theatre h3 { font: 24px Georgia, serif; padding-bottom: 16px; }
+        .preview-message.is-dynamic { animation: curtain-reveal .8s ease-out; }
+        @keyframes curtain-reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .preview-message.is-dynamic { animation: none; } }
+        #preview-result { color: #d6bc88; }
+        *,*::before,*::after { scrollbar-width:none; text-decoration:none!important; }
+        *::-webkit-scrollbar { display:none; width:0; height:0; }
+    </style>
+</head>
+<body data-mit-preview="true">
+    <div id="extensionsMenu"></div><div id="leftSendForm"></div>
+    <main id="preview-chat"><h1>小剧场 · 模拟聊天</h1><p>本地演示：使用固定示例内容，不连接模型，也不写入真实酒馆。</p><div id="preview-messages"></div><p id="preview-result" role="status" aria-live="polite">聊天保持 2 条；生成结果留在剧场的演出记录中。</p></main>
+    <script>
+        let previewSettings = {};
+        try { previewSettings = JSON.parse(localStorage.getItem('mit-preview-settings') || '{}') || {}; } catch { /* use fresh preview settings */ }
+        const previewChat = JSON.parse(localStorage.getItem('mit-preview-chat') || 'null') || [
+            { name: '预览用户', is_user: true, mes: '我们刚刚结束了一段主线谈话。', extra: {} },
+            { name: '当前角色', is_user: false, mes: '我记得，也记得我们之间的约定。', extra: {} },
+        ];
+        let previewRun = null;
+        function renderPreviewChat() {
+            const host = document.getElementById('preview-messages');
+            host.replaceChildren();
+            for (const message of previewChat) {
+                const article = document.createElement('article');
+                article.className = 'preview-message';
+                const name = document.createElement('h2');
+                name.textContent = message.name;
+                article.append(name);
+                if (message.previewRun) {
+                    if (message.previewRun.mode !== 'off') article.classList.add('is-theatre');
+                    if (message.previewRun.mode === 'dynamic') article.classList.add('is-dynamic');
+                    const heading = document.createElement('h3');
+                    heading.textContent = message.previewRun.title;
+                    article.append(heading);
+                }
+                const body = document.createElement('p');
+                body.textContent = message.mes;
+                article.append(body);
+                host.append(article);
+            }
+            document.getElementById('preview-result').textContent = `模拟聊天共 ${previewChat.length} 条 · 生成不会自动写入`;
+        }
+        renderPreviewChat();
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = (url, options) => url === '/api/chats/get' || url === '/api/chats/group/get'
+            ? Promise.resolve(new Response(localStorage.getItem('mit-preview-chat') || '[]', {status:200,headers:{'Content-Type':'application/json'}}))
+            : nativeFetch(url, options);
+        window.SillyTavern = {
+            getContext() {
+                return {
+                    name1: '预览用户',
+                    name2: '当前角色',
+                    chatId: 'preview-chat',
+                    characterId: 0,
+                    characters: [{ name: '当前角色', avatar: 'none', first_mes: '欢迎来到用于界面预览的开场白。', data: { alternate_greetings: ['另一条预览开场白。'] } }],
+                    groups: [],
+                    groupId: null,
+                    chat: previewChat,
+                    maxContext: 32768,
+                    extensionSettings: previewSettings,
+                    getThumbnailUrl(_type, file) { return file; },
+                    saveSettingsDebounced() { localStorage.setItem('mit-preview-settings', JSON.stringify(previewSettings)); },
+                    getCharacterCardFields() { return { description: '用于界面预览的角色。', personality: '沉稳', persona: '预览用户', scenario: '当前主线', system: '保持角色一致。', charDepthPrompt: '按人物动机行动。', jailbreak: '', creatorNotes: '预览用创作者备注。', version: 'preview', mesExamples: '' }; },
+                    substituteParams(text) { return text.replaceAll('{{char}}', '当前角色').replaceAll('{{user}}', '预览用户'); },
+                    async generateRaw({ prompt }) {
+                        const contextTurns = prompt.slice(0, -1).length;
+                        document.getElementById('preview-result').textContent = `已读取 ${contextTurns} 条上下文 · 聊天仍为 ${previewChat.length} 条 · 未发送`;
+                        return `<!doctype html><html lang="zh-CN"><head><style>body{background:#fffaf0;color:#43503f}main{max-width:650px;margin:auto}.kicker{letter-spacing:.2em;color:#718362;font-size:12px}h1{font:30px Georgia,serif;margin:10px 0 20px}blockquote{margin:22px 0;padding:16px 20px;border-left:3px solid #b4c2a0;background:#f0f1df;border-radius:0 12px 12px 0}summary{cursor:pointer;color:#60734f}</style></head><body><main><span class="kicker">无名剧场 · 本地示例</span><h1>今夜，故事为你留了一页</h1><p>帷幕缓缓升起，刚才的谈话仿佛还停在耳边。台灯亮了，桌上多出一本写着我们名字的剧本。</p><blockquote>“这次，换你来决定第一句台词。”他把剧本推到你面前，眼中带着一点笑意。</blockquote><details><summary>翻开剧本里的小纸条</summary><p>纸条背面，是两人当年没有说完的约定。他们相视而笑，把误会一页页讲清。天亮时，剧本已写到最后：两人一起关上剧院的灯，沿着熟悉的小路回家。这一次，谁也没有失约。</p></details><p class="kicker">读取上下文 ${contextTurns} 条 · 聊天未发送</p></main></body></html>`;
+                    },
+                    addOneMessage() { renderPreviewChat(); },
+                    getRequestHeaders() { return {'Content-Type':'application/json'}; },
+                    async saveChat() { localStorage.setItem('mit-preview-chat',JSON.stringify(previewChat)); document.getElementById('preview-result').textContent = `模拟聊天 ${previewChat.length} 条 · 用户点击后写入`; },
+                };
+            },
+        };
+    </script>
+    <script type="module" src="./index.js?rev=workbench-v060"></script>
+    <script>
+        const previewView = new URLSearchParams(location.search).get('view');
+        if (previewView) {
+            let previewAttempts = 0;
+            const openPreviewView = () => {
+                const button = document.querySelector(`.mit-nav[data-view="${previewView}"]`);
+                if (button) return button.click();
+                if (previewAttempts++ < 40) setTimeout(openPreviewView, 100);
+            };
+            openPreviewView();
+        }
+    </script>
+</body>
+</html>
