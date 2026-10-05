@@ -1,5 +1,7 @@
-import { prepareHtmlDraft, draftText, textDraft } from './html-draft.js?v=0.6.0-final';
+import { prepareHtmlDraft, draftText, textDraft } from './html-draft.js?v=static-art-v3';
 import { createWorkStore } from './work-store.js?v=0.6.0-final';
+import { loadGenerationSources } from './generation-context.js?v=ai-reading-v2';
+import { buildVisualGuidance } from './visual-guidance.js?v=0.6.1-d0-reading';
 import {
     BUILTIN_COVER_LIBRARY,
     COVER_LIBRARY_VERSION,
@@ -12,29 +14,14 @@ const SETTINGS_KEY = 'interludeTheatre';
 const ROOT_ID = 'mit-root';
 const MENU_ID = 'mit-open-menu';
 const HALL_IMAGE_URLS = Object.freeze({
-    lobby: new URL('./assets/theatre-hall-cream-candidate-v1.png', import.meta.url).href,
-    library: new URL('./assets/theatre-hall-cream-candidate-v1.png', import.meta.url).href,
-    history: new URL('./assets/theatre-hall-cream-candidate-v1.png', import.meta.url).href,
-    director: new URL('./assets/theatre-hall-cream-candidate-v1.png', import.meta.url).href,
+    lobby: new URL('./assets/theatre-hall-neutral-navigation-v1.png', import.meta.url).href,
+    library: new URL('./assets/theatre-hall-neutral-navigation-v1.png', import.meta.url).href,
+    history: new URL('./assets/theatre-hall-neutral-navigation-v1.png', import.meta.url).href,
+    director: new URL('./assets/theatre-hall-neutral-navigation-v1.png', import.meta.url).href,
 });
 const GENERIC_COVER_ATLAS_URL = new URL('./assets/generic-play-covers-paper-cut-atlas.png', import.meta.url).href;
 const STORYTELLER_LIBRARY_SPRITE_URL = new URL('./assets/library-storyteller-covers-generated-v1.png', import.meta.url).href;
 const THEATRE_MESSAGE_KEY = 'interludeTheatre';
-const BEAUTIFICATION_PROFILES = Object.freeze({
-    static: [
-        '采用克制、清晰的静态舞台排版。标题、正文和链接均用无下划线样式，层级通过留白、字号和字重表达，标题下方保持自然留白。',
-        '以标题、场景提示、正文和自然分幕组织内容，装饰服务于阅读，不堆叠无意义符号。',
-        '篇幅以完整讲清本场为准，通常约 800—1500 字；保持移动端易读和文字、背景高对比。',
-        '若剧目自身另有明确篇幅或排版要求，以剧目要求为准。',
-    ].join('\n'),
-    dynamic: [
-        '采用更华丽、富有动态舞台感的呈现，允许更丰富的灯光、幕布、转场、音效提示与视觉层次。标题、正文和链接均用无下划线样式，层级通过留白、字号和字重表达，标题下方保持自然留白。',
-        '正文可以更长，通常约 1600—3000 字；每一幕都要有明确场景变化、人物动作、对白推进和情绪回声。',
-        '若使用 HTML/CSS，美化必须限制在本条消息内部，适配移动端，不出框、不漏字，不使用脚本、外链资源或影响酒馆其他消息的全局选择器。',
-        '动态效果必须尊重 prefers-reduced-motion；文字与背景保持高对比，动画不能妨碍阅读或遮挡交互。',
-        '若剧目自身另有明确篇幅或排版要求，以剧目要求为准。',
-    ].join('\n'),
-});
 
 const DEFAULT_PLAYS = [
     {
@@ -288,7 +275,9 @@ let session = null;
 let sessionWrites = Promise.resolve();
 let writeInFlight = false;
 let storageMessage = '';
-let workspaceDrawer = '';
+let theatrePage = 'lobby';
+let readerOpen = false;
+let readerReturnView = 'history';
 let workspaceFavorites = false;
 let sendTarget = null;
 let sessionSaveTimer;
@@ -301,7 +290,7 @@ function newId() {
 
 function newSession(play = selectedPlay()) {
     return {
-        id: '__session__', work: null, chapter: 0, editing: false, dirty: false,
+        id: '__session__', work: null, chapter: 0, editing: false, dirty: false, started: false,
         form: { playId: play?.id || '', title: play?.title || '我的小剧场', requirements: play?.description || '',
             note: settings.directorNote || '', mode: settings.mode, continueContext: settings.continueContext,
             beautification: settings.beautificationEnabled ? settings.beautificationMode : 'off' },
@@ -345,7 +334,7 @@ function queueSessionSave() {
     const value = clone(session);
     pendingSaves++;
     sessionWrites = sessionWrites.catch(() => {}).then(() => workStore.put(value)).then(() => {
-        storageMessage = session.dirty ? '编辑草稿已保存在本机' : '草稿已保存在本机';
+        storageMessage = session.dirty ? '编辑草稿已保存在本机' : currentWork() ? '故事已保存在本机' : '创作要求已暂存';
         updateWorkspaceStatus();
         return true;
     }).catch(error => {
@@ -357,7 +346,7 @@ function queueSessionSave() {
 }
 
 function updateWorkspaceStatus() {
-    const status = document.querySelector('#mit-work-status');
+    const status = document.querySelector(readerOpen ? '#mit-root .mit-reader #mit-work-status' : '#mit-root .mit-theatre #mit-work-status');
     if (status) status.textContent = generationInFlight ? '正在创作，可关闭剧场稍后回来查看…' : storageMessage;
 }
 
@@ -376,7 +365,7 @@ async function usePlay(play) {
     if (!play || generationInFlight || writeInFlight) return;
     captureWorkspace();
     if (currentWork() && !await saveCurrentWork()) return;
-    session = newSession(play); workspaceDrawer = '';
+    session = newSession(play); session.started = true; theatrePage = 'compose'; readerOpen = false;
     await queueSessionSave(); showWorkspace();
 }
 
@@ -384,7 +373,7 @@ function captureWorkspace() {
     if (!session) return;
     const before = JSON.stringify([session.form, session.sequel]);
     let changed = false;
-    const form = document.querySelector('#mit-work-form');
+    const form = readerOpen ? null : document.querySelector('#mit-work-form');
     if (form) {
         session.form.title = form.elements.title.value;
         session.form.requirements = form.elements.requirements.value;
@@ -393,7 +382,7 @@ function captureWorkspace() {
         session.form.continueContext = form.elements.continueContext.checked;
         session.form.beautification = form.elements.beautification.value;
     }
-    const editor = document.getElementById('mit-work-editor');
+    const editor = readerOpen ? document.getElementById('mit-work-editor') : null;
     if (editor && currentWork()) {
         const chapter = currentWork().chapters[session.chapter];
         if (chapter && editor.value !== (chapter.editText ?? draftText(chapter.html))) {
@@ -402,7 +391,7 @@ function captureWorkspace() {
             changed = true;
         }
     }
-    const sequel = document.getElementById('mit-sequel-requirement');
+    const sequel = readerOpen ? document.getElementById('mit-sequel-requirement') : null;
     if (sequel) session.sequel = sequel.value;
     if (currentWork() && session.form.title !== currentWork().title) session.dirty = true;
     if (changed || before !== JSON.stringify([session.form, session.sequel])) sessionMutation++;
@@ -447,49 +436,118 @@ async function saveCurrentWork(capture = true) {
 }
 
 function showWorkspace() {
+    if (!document.getElementById(ROOT_ID)) return;
     if (!session) {
-        showSheet('lobby', '创作小剧场', '<p>正在打开作品库…</p>', 'mit-workspace-sheet');
+        showSheet('lobby', '剧场大厅', '<p>正在打开剧场…</p>', 'mit-workspace-sheet');
         ensureWorks().then(() => { if (document.getElementById(ROOT_ID)?.isConnected) showWorkspace(); });
         return;
     }
-    const work = currentWork();
+    if (readerOpen && currentWork()) return showReader();
+    document.getElementById(ROOT_ID).classList.remove('is-reading');
+    document.querySelector('#mit-root .mit-reader')?.replaceChildren();
+    if (theatrePage === 'compose') return showComposer();
+    if (theatrePage === 'library') return showLibrary();
+    if (theatrePage === 'history') return showWorks();
+    if (theatrePage === 'director') return showDirector();
+    return showLobby();
+}
+
+function showLobby() {
+    theatrePage = 'lobby';
+    const recent = currentWork() || works[0];
+    const busy = generationInFlight || writeInFlight ? 'disabled' : '';
+    showSheet('lobby', '剧场大厅', `
+        <p class="mit-page-intro">今天，想和 ${escapeHtml(getContext()?.name2 || '角色')} 经历怎样的故事？</p>
+        <div class="mit-lobby-choices">
+            <button class="mit-start-choice" data-action="choose-play" ${busy}><span class="mit-choice-number">01</span><strong>从剧目库开始</strong><span>挑选一个现成的故事设定</span><b aria-hidden="true">→</b></button>
+            <button class="mit-start-choice" data-action="new-work" ${busy}><span class="mit-choice-number">02</span><strong>写下自己的故事</strong><span>直接填写你想发生的情节</span><b aria-hidden="true">→</b></button>
+        </div>
+        ${recent ? `<section class="mit-recent-work"><span class="mit-eyebrow">最近的故事</span><h3>${escapeHtml(recent.title)}</h3><p>${recent.chapters.length} 篇 · ${escapeHtml(recent.protagonist || '当前角色')}</p><button class="mit-primary" data-action="open-work" data-entry-id="${escapeHtml(recent.id)}" ${busy}>继续阅读</button></section>` : '<p class="mit-page-note">写完后会展开独立阅读页，保存的故事都能在「演出记录」里找到。</p>'}
+        ${!currentWork() && session.started !== false && session.form.requirements ? '<button class="mit-text-button" data-action="return-work">继续填写上次的创作要求 →</button>' : ''}
+        <p id="mit-work-status" class="mit-page-note" role="status"></p>
+    `, 'mit-workspace-sheet mit-lobby-sheet');
+    updateWorkspaceStatus();
+}
+
+function showComposer() {
     const form = session.form;
     const play = playById(form.playId);
-    const chapter = work?.chapters[session.chapter];
     const disabled = generationInFlight || writeInFlight ? 'disabled' : '';
-    const workActionsDisabled = !chapter || generationInFlight || writeInFlight ? 'disabled' : '';
+    showSheet('lobby', '开始创作', `
+        <p class="mit-page-intro">${play ? `已选剧目：${escapeHtml(play.title)}。补充你的想法，就可以开始。` : '写下想发生的情节，让角色为你演完这段故事。'}</p>
+        <form id="mit-work-form" class="mit-work-form"><fieldset ${disabled}>
+            <label>故事叫什么<input name="title" maxlength="120" value="${escapeHtml(form.title)}" aria-label="故事标题"></label>
+            <label>你希望发生什么<textarea name="requirements" rows="4" maxlength="6000" placeholder="例如：雨夜重逢，把当年的误会说开，最后一起回家。">${escapeHtml(form.requirements)}</textarea></label>
+            <label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${form.continueContext ? 'checked' : ''}>发送全部聊天上下文</label>
+            <p class="mit-context-help">角色与用户设定、启用的预设和世界书会完整提供。勾选后再附上全部主聊天；续写包含所有前篇。</p>
+            <details class="mit-work-advanced"><summary>调整写法与排版</summary>
+                <label>故事风格<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode => `<option ${form.mode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+                <label>阅读排版<select name="beautification"><option value="off" ${form.beautification === 'off' ? 'selected' : ''}>简洁文字</option><option value="static" ${form.beautification === 'static' ? 'selected' : ''}>插页排版</option><option value="dynamic" ${form.beautification === 'dynamic' ? 'selected' : ''}>动态排版</option></select></label>
+                <label>还有什么要求<textarea name="note" rows="2" maxlength="1000">${escapeHtml(form.note)}</textarea></label>
+            </details>
+            <div class="mit-compose-actions"><button type="button" data-action="back-lobby">返回大厅</button><button type="submit" class="mit-primary">${generationInFlight ? '正在写故事…' : currentWork() ? '按这些要求另写一篇' : '开始写故事'}</button></div>
+        </fieldset></form>
+        <p id="mit-work-status" class="mit-page-note" role="status"></p>
+    `, 'mit-workspace-sheet mit-compose-sheet');
+    updateWorkspaceStatus();
+}
+
+function showWorks() {
+    theatrePage = 'history';
+    const entries = works.filter(item => !workspaceFavorites || item.favorite).sort((a,b) => (b.updatedAt || b.startedAt || '').localeCompare(a.updatedAt || a.startedAt || ''));
+    const disabled = generationInFlight || writeInFlight ? 'disabled' : '';
+    showSheet('history', '演出记录', `
+        <p class="mit-page-intro">写完的故事都在这里。点开一篇，慢慢读。</p>
+        <div class="mit-work-tools"><button data-action="work-filter" aria-pressed="${workspaceFavorites}">${workspaceFavorites ? '查看全部故事' : '只看收藏'}</button><span>${entries.length} 部故事</span></div>
+        <div class="mit-records-list">${entries.map(item => `<button class="mit-work-row" data-action="open-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}><span><strong>${item.favorite ? '★ ' : ''}${escapeHtml(item.title)}</strong><small>${item.chapters.length} 篇 · ${escapeHtml(item.protagonist || '当前角色')}</small></span><b>打开阅读 →</b></button>`).join('') || '<p class="mit-page-note">这里还没有故事。去剧场大厅开始第一篇吧。</p>'}</div>
+        <details class="mit-archive-tools"><summary>备份与恢复</summary><p>故事保存在这个浏览器里。换设备前，先导出备份。</p><div class="mit-work-tools"><button data-action="backup-works">导出全部故事</button><label class="mit-file-button">导入故事备份<input id="mit-work-import" type="file" accept=".json,application/json"></label></div></details>
+    `, 'mit-workspace-sheet mit-records-sheet');
+}
+
+function showDirector() {
+    theatrePage = 'director';
+    showSheet('director', '导演室', `
+        <p class="mit-page-intro">设置新故事的默认写法。开始创作时，仍然可以单独调整。</p>
+        <form id="mit-director-form" class="mit-director-form">
+            <label>主角名称<input name="protagonist" value="${escapeHtml(settings.protagonist || '')}" placeholder="留空，使用当前聊天的角色"></label>
+            <label>故事风格<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode => `<option ${settings.mode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+            <label>默认写作要求<textarea name="directorNote" rows="3" maxlength="1000">${escapeHtml(settings.directorNote || '')}</textarea></label>
+            <label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${settings.continueContext ? 'checked' : ''}>发送全部聊天上下文</label>
+            <label class="mit-checkbox-row"><input name="beautificationEnabled" type="checkbox" ${settings.beautificationEnabled ? 'checked' : ''}>为故事添加阅读排版</label>
+            <label>排版方式<select name="beautificationMode"><option value="static" ${settings.beautificationMode !== 'dynamic' ? 'selected' : ''}>静态插页</option><option value="dynamic" ${settings.beautificationMode === 'dynamic' ? 'selected' : ''}>动态插页</option></select></label>
+            <button class="mit-primary" type="submit">保存默认设置</button>
+        </form>
+    `, 'mit-workspace-sheet mit-director-sheet');
+}
+
+function showReader() {
+    const root = document.getElementById(ROOT_ID);
+    const work = currentWork();
+    if (!root || !work) return;
+    readerOpen = true;
+    root.classList.add('is-reading');
+    const host = root.querySelector('.mit-reader');
+    const chapter = work.chapters[session.chapter];
+    const disabled = generationInFlight || writeInFlight ? 'disabled' : '';
     sendTarget = targetIdentity();
-    const written = work?.writes.some(item => item.target === sendTarget?.key && item.revision === work.revision && item.confirmed);
-    const drawer = workspaceDrawer === 'works' ? `
-        <div class="mit-work-list" tabindex="0" aria-label="我的作品">
-            <div class="mit-work-tools"><button data-action="work-filter">${workspaceFavorites ? '查看全部作品' : '只看收藏作品'}</button><button data-action="backup-works">导出作品备份</button><label class="mit-file-button">导入备份<input id="mit-work-import" type="file" accept=".json,application/json"></label></div>
-            <p class="mit-work-hint">作品保存在本机浏览器，换设备前请导出备份。</p>
-            ${works.filter(item => !workspaceFavorites || item.favorite).sort((a,b) => (b.updatedAt || b.startedAt || '').localeCompare(a.updatedAt || a.startedAt || '')).map(item => `<button class="mit-work-row" data-action="open-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}><strong>${item.favorite ? '★ ' : ''}${escapeHtml(item.title)}</strong><span>${item.chapters.length ? `${item.chapters.length} 篇 · ${escapeHtml(item.protagonist || '')}` : '旧版未保留正文'}</span></button>`).join('') || '<p>这里还没有作品。</p>'}
-        </div>` : '';
-    showSheet('lobby', work ? work.title : '创作小剧场', `
-        <div class="mit-work-tools"><button data-action="choose-play" ${disabled}>选剧目</button><button data-action="new-work" ${disabled}>自己写</button><button data-action="toggle-works">我的作品</button><span id="mit-work-status" role="status"></span></div>
-        ${drawer}
-        <details class="mit-work-request" ${work ? '' : 'open'}><summary>${work ? '查看或调整写作要求' : '写下这一场故事'}</summary><form id="mit-work-form" class="mit-work-form">
-            <fieldset ${disabled}>
-                <div class="mit-work-heading"><span class="mit-work-cover" data-cover-play-id="${escapeHtml(play?.id || '')}" role="img"></span><label>故事标题<input name="title" maxlength="120" value="${escapeHtml(form.title)}" aria-label="故事标题"></label></div>
-                <label>这次想写什么<textarea name="requirements" rows="2" maxlength="6000" placeholder="写下情节、关系、氛围或结局要求…">${escapeHtml(form.requirements)}</textarea></label>
-                <div class="mit-work-tools"><label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${form.continueContext ? 'checked' : ''}>参考当前聊天</label><label>排版<select name="beautification"><option value="off" ${form.beautification === 'off' ? 'selected' : ''}>简洁</option><option value="static" ${form.beautification === 'static' ? 'selected' : ''}>静态</option><option value="dynamic" ${form.beautification === 'dynamic' ? 'selected' : ''}>动态</option></select></label><button type="submit" class="mit-primary">${generationInFlight ? '正在创作…' : work ? '另写一版' : '生成完整故事'}</button></div>
-                <details class="mit-work-advanced"><summary>更多写作设置</summary><label>演出方式<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode=>`<option ${form.mode===mode?'selected':''}>${mode}</option>`).join('')}</select></label><label>补充备注<textarea name="note" rows="2" maxlength="1000">${escapeHtml(form.note)}</textarea></label></details>
-            </fieldset>
-        </form></details>
-        ${work ? `<section class="mit-work-result" aria-label="作品正文">
-            <div class="mit-work-tools"><label>篇章<select id="mit-work-chapter" ${disabled}>${work.chapters.map((item,i)=>`<option value="${i}" ${session.chapter===i?'selected':''}>${escapeHtml(item.title)}</option>`).join('')}</select></label><button data-action="edit-work" ${workActionsDisabled}>${session.editing ? '阅读' : '编辑正文'}</button><span>${escapeHtml(work.protagonist || '')} · 第 ${work.revision} 版</span></div>
-            ${chapter ? (session.editing ? `<textarea id="mit-work-editor" aria-label="编辑作品正文" ${disabled}>${escapeHtml(chapter.editText ?? draftText(chapter.html))}</textarea>` : '<iframe class="mit-draft-frame" title="作品阅读" tabindex="0" sandbox="" referrerpolicy="no-referrer"></iframe>') : '<p>这条旧记录的正文已被旧版裁掉，无法恢复。</p>'}
-            <div class="mit-work-tools"><button data-action="save-work" ${workActionsDisabled}>保存作品</button><button data-action="favorite-work" ${workActionsDisabled}>${work.favorite?'★ 已收藏作品':'☆ 收藏作品'}</button><button data-action="sequel-work" ${workActionsDisabled}>继续创作</button><button data-action="download-work" ${chapter?'':'disabled'}>下载作品</button><button data-action="write-work" ${workActionsDisabled || (written && !session.dirty?'disabled':'')}>${written && !session.dirty ? '已写入此聊天' : '写入聊天'}</button></div>
-            ${session.sequelOpen ? `<div class="mit-sequel"><label>后续篇章要求<textarea id="mit-sequel-requirement" rows="2" maxlength="3000" ${disabled} placeholder="已有故事会保留，从它的结局继续写…">${escapeHtml(session.sequel || '')}</textarea></label><button class="mit-primary" data-action="generate-sequel" ${disabled}>${generationInFlight ? '正在创作…' : '生成后续篇章'}</button></div>` : ''}
-            <p class="mit-work-hint">${sendTarget ? `写入目标：${escapeHtml(sendTarget.name)} · ${escapeHtml(sendTarget.chatId)}。` : '打开角色聊天后可写入。'}仅点击写入按钮才会新增消息。</p>
-        </section>` : '<p class="mit-work-empty">把想发生的故事写在上方。落幕之后，仍可以接着写。</p>'}
-    `, 'mit-workspace-sheet');
-    const cover = document.querySelector('.mit-work-cover');
-    if (play) applyCover(cover, play); else if (cover) cover.hidden = true;
-    const frame = document.querySelector('#mit-root .mit-work-result iframe');
+    const written = work.writes.some(item => item.target === sendTarget?.key && item.revision === work.revision && item.confirmed);
+    host.innerHTML = `
+        <header class="mit-reader-header"><button data-action="close-reader" aria-label="返回${readerReturnView === 'lobby' ? '剧场大厅' : '演出记录'}">← 返回</button><div class="mit-reader-chapter" ${session.sequelOpen ? 'hidden' : ''}><select id="mit-work-chapter" aria-label="篇章" ${disabled} ${work.chapters.length < 2 ? 'hidden' : ''}>${work.chapters.map((item,i) => `<option value="${i}" ${session.chapter === i ? 'selected' : ''}>${escapeHtml(item.title)}</option>`).join('')}</select><button data-action="edit-work" ${disabled}>${session.editing ? '保存并阅读' : '编辑正文'}</button></div></header>
+        <div class="mit-reader-content">${session.sequelOpen ? `<section class="mit-sequel"><span class="mit-eyebrow">从故事的结尾，继续往后写</span><h3>下一篇会发生什么？</h3><p>已有的 ${work.chapters.length} 篇会完整保留，新内容接在后面。</p><label>后续情节<textarea id="mit-sequel-requirement" rows="6" maxlength="3000" ${disabled} placeholder="例如：一年后，两人再次来到这间剧院…">${escapeHtml(session.sequel || '')}</textarea></label><div class="mit-compose-actions"><button data-action="sequel-work" ${disabled}>返回阅读</button><button class="mit-primary" data-action="generate-sequel" ${disabled}>${generationInFlight ? '正在续写…' : '开始续写'}</button></div></section>` : chapter ? (session.editing ? `<textarea id="mit-work-editor" aria-label="编辑作品正文" ${disabled}>${escapeHtml(chapter.editText ?? draftText(chapter.html))}</textarea>` : '<iframe class="mit-reader-frame" title="作品阅读" tabindex="0" sandbox="" referrerpolicy="no-referrer"></iframe>') : '<p class="mit-page-note">这条旧记录没有保留下正文。</p>'}</div>
+        <footer class="mit-reader-footer"><span id="mit-work-status" role="status"></span><div class="mit-reader-actions" ${session.sequelOpen ? 'hidden' : ''}>${session.editing ? `<button data-action="save-work" ${disabled}>保存修改</button>` : `<button data-action="favorite-work" aria-pressed="${work.favorite}" ${disabled}>${work.favorite ? '★ 已收藏' : '☆ 收藏故事'}</button>`}<button class="mit-primary" data-action="sequel-work" ${disabled}>${session.sequelOpen ? '返回阅读' : '续写下一篇'}</button><details class="mit-reader-more"><summary>更多</summary><div><button data-action="download-work">下载整部故事</button><button data-action="rewrite-work" ${disabled}>按原要求另写一版</button><p>${sendTarget ? `聊天目标：${escapeHtml(sendTarget.name)}` : '先打开角色聊天'}</p><button data-action="write-work" ${disabled || (written && !session.dirty ? 'disabled' : '')}>${written && !session.dirty ? '已写入此聊天' : '写入聊天'}</button></div></details></div></footer>`;
+    const frame = host.querySelector('iframe');
     if (frame && chapter) frame.srcdoc = prepareHtmlDraft(chapter.editText === undefined ? chapter.html : textDraft(chapter.editText, chapter.title), work.title);
     updateWorkspaceStatus();
+}
+
+async function closeReader() {
+    captureWorkspace();
+    if (currentWork() && !await saveCurrentWork()) return;
+    readerOpen = false;
+    session.editing = false; session.sequelOpen = false;
+    theatrePage = readerReturnView;
+    await queueSessionSave();
+    showWorkspace();
 }
 
 function downloadFile(content, name, type) {
@@ -546,24 +604,34 @@ async function writeCurrentWork() {
 }
 
 async function handleWorkspaceAction(action, target) {
-    const actions = ['choose-play','return-work','new-work','toggle-works','open-work','work-filter','save-work','edit-work','favorite-work','sequel-work','generate-sequel','download-work','write-work','backup-works'];
+    const actions = ['choose-play','return-work','new-work','back-lobby','close-reader','rewrite-work','open-work','work-filter','save-work','edit-work','favorite-work','sequel-work','generate-sequel','download-work','write-work','backup-works'];
     if (!actions.includes(action)) return false;
     captureWorkspace();
-    if ((generationInFlight || writeInFlight) && !['toggle-works','work-filter','download-work','backup-works'].includes(action)) return true;
-    if (action === 'choose-play') { await queueSessionSave(); closeSheet(); setCurrentView('lobby'); renderLobbyState(); return true; }
+    if ((generationInFlight || writeInFlight) && !['back-lobby','close-reader','work-filter','download-work','backup-works'].includes(action)) return true;
+    if (action === 'close-reader') { await closeReader(); return true; }
+    if (action === 'choose-play') { setView('library'); return true; }
+    if (action === 'back-lobby') { setView('lobby'); return true; }
+    if (action === 'return-work' || action === 'rewrite-work') { readerOpen = false; theatrePage = 'compose'; }
     if (action === 'new-work') {
         if (currentWork() && !await saveCurrentWork()) return true;
-        session = newSession(null); session.form.requirements = ''; workspaceDrawer = '';
+        session = newSession(null); session.started = true; session.form.title = ''; session.form.requirements = ''; theatrePage = 'compose'; readerOpen = false;
     }
-    if (action === 'toggle-works') workspaceDrawer = workspaceDrawer ? '' : 'works';
     if (action === 'work-filter') workspaceFavorites = !workspaceFavorites;
     if (action === 'open-work') {
         if (currentWork() && !await saveCurrentWork()) return true;
-        const work = works.find(item=>item.id===target.dataset.entryId);
-        if (work) { session = newSession(playById(work.playId)); session.work=clone(work); session.form={...session.form,...work.form,title:work.title}; workspaceDrawer=''; }
+        const work = works.find(item => item.id === target.dataset.entryId);
+        if (work) {
+            const lastChapter = currentWork()?.id === work.id ? session.chapter : 0;
+            readerReturnView = theatrePage === 'lobby' ? 'lobby' : 'history';
+            session = newSession(playById(work.playId)); session.work = clone(work); session.form = {...session.form,...work.form,title:work.title};
+            session.chapter = Math.min(lastChapter, Math.max(0, work.chapters.length - 1)); readerOpen = true;
+        }
     }
     if (action === 'save-work') await saveCurrentWork();
-    if (action === 'edit-work') session.editing = !session.editing;
+    if (action === 'edit-work') {
+        if (session.editing && !await saveCurrentWork()) return true;
+        session.editing = !session.editing;
+    }
     if (action === 'favorite-work' && currentWork()) { currentWork().favorite = !currentWork().favorite; await saveCurrentWork(); }
     if (action === 'sequel-work') session.sequelOpen = !session.sequelOpen;
     if (action === 'generate-sequel') { await runWorkspace(true); return true; }
@@ -575,7 +643,7 @@ async function handleWorkspaceAction(action, target) {
     }
     if (action === 'backup-works') {
         if (currentWork()) await saveCurrentWork();
-        downloadFile(JSON.stringify({format:'interlude-theatre-works',version:1,works: [...works.filter(item=>item.id!==currentWork()?.id), ...(currentWork()?[materializeWork()]:[])]},null,2), '无名剧场-作品备份.json', 'application/json');
+        downloadFile(JSON.stringify({format:'interlude-theatre-works',version:1,works: [...works.filter(item => item.id !== currentWork()?.id), ...(currentWork() ? [materializeWork()] : [])]},null,2), '无名剧场-作品备份.json', 'application/json');
         return true;
     }
     await queueSessionSave(); showWorkspace(); return true;
@@ -871,34 +939,9 @@ function applyCover(element, play) {
 }
 
 function renderLobbyState() {
-    const root = document.getElementById(ROOT_ID);
-    if (!root) return;
-    const visiblePlays = getVisiblePlays();
-    if (!visiblePlays.some((play) => play.id === settings.selectedId)) settings.selectedId = visiblePlays[0]?.id || null;
-    const current = selectedPlay();
-    const currentTitle = root.querySelector('.mit-current-title');
-    currentTitle.textContent = current ? `已选：${current.title}` : '尚未选剧';
-    const programGrid = root.querySelector('#mit-program-grid');
-    if (programGrid) {
-        programGrid.innerHTML = visiblePlays.length ? visiblePlays.map((play) => `
-            <div class="mit-card-slot ${play.id === settings.selectedId ? 'is-selected' : ''}">
-                <button class="mit-card-hotspot ${play.id === settings.selectedId ? 'is-selected' : ''}" type="button" data-play-id="${escapeHtml(play.id)}" aria-pressed="${play.id === settings.selectedId}" aria-label="选择剧目：${escapeHtml(play.title)}" title="${escapeHtml(`${play.title}｜${play.description}`)}">
-                    <span class="mit-card-cover" data-cover-play-id="${escapeHtml(play.id)}" role="img"></span>
-                    <span class="mit-card-label">${escapeHtml(play.title)}</span>
-                    ${play.id === settings.selectedId ? '<span class="mit-selected-stamp" aria-hidden="true">已选</span>' : ''}
-                </button>
-            </div>`).join('') : '<div class="mit-program-empty">当前没有收藏的剧目，请到第二页剧目库收藏。</div>';
-        programGrid.querySelectorAll('[data-cover-play-id]').forEach((element) => applyCover(element, playById(element.dataset.coverPlayId)));
-    }
-    root.querySelectorAll('.mit-program-toolbar [data-filter]').forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.filter === settings.lobbyFilter);
-    });
-    const sort = root.querySelector('#mit-lobby-sort');
-    if (sort) sort.value = settings.lobbySort;
-    const count = root.querySelector('.mit-program-count');
-    if (count) count.textContent = `${visiblePlays.length} 部`;
-
-    saveSettings();
+    if (!document.getElementById(ROOT_ID) || readerOpen) return;
+    if (theatrePage === 'library') showLibrary();
+    else if (theatrePage === 'lobby') showLobby();
 }
 
 function usedBySummary(play) {
@@ -921,43 +964,24 @@ function createRoot() {
             <div class="mit-stage">
                 <img class="mit-hall-art" src="${HALL_IMAGE_URLS.lobby}" alt="奶油色童话纸雕剧场大厅，左侧鼠尾草绿导航与横向展开的长节目单纸页">
                 <button class="mit-close" type="button" data-action="close" aria-label="关闭无名剧场">×</button>
-                <button class="mit-nav mit-nav-lobby" type="button" data-view="lobby" aria-label="剧场大厅"></button>
-                <button class="mit-nav mit-nav-library" type="button" data-view="library" aria-label="剧目库"></button>
-                <button class="mit-nav mit-nav-history" type="button" data-view="history" aria-label="演出记录"></button>
-                <button class="mit-nav mit-nav-director" type="button" data-view="director" aria-label="导演室"></button>
-                <section class="mit-program-panel" aria-label="今晚的节目单">
-                    <header class="mit-program-heading">
-                        <h2>今晚的节目单</h2>
-                        <div class="mit-selection-summary"><div class="mit-current-title" aria-live="polite"></div><small>选择剧目后，填写这一场的故事要求</small></div>
-                    </header>
-                    <div class="mit-program-toolbar">
-                        <div class="mit-filter-group" role="group" aria-label="剧目筛选">
-                            <button type="button" data-action="set-filter" data-filter="all">全部</button>
-                            <button type="button" data-action="set-filter" data-filter="favorites">只看收藏</button>
-                        </div>
-                        <select id="mit-lobby-sort" aria-label="剧目排序">
-                            <option value="latest">最新</option>
-                            <option value="most-used">使用最多</option>
-                        </select>
-                        <span class="mit-program-count"></span>
-                    </div>
-                    <div class="mit-program-scroll" tabindex="0"><div id="mit-program-grid" class="mit-program-grid"></div></div>
-                    <div class="mit-lobby-actions">
-                        <button class="mit-random" type="button" data-action="random" aria-label="随机抽取当前筛选中的一个剧目">随机抽取</button>
-                        <button class="mit-start" type="button" data-action="return-work">返回创作</button><button class="mit-random" type="button" data-action="manage-plays">管理剧目</button>
-                    </div>
-                </section>
+                <nav class="mit-navigation" aria-label="剧场主导航">
+                    <button class="mit-nav mit-nav-lobby" type="button" data-view="lobby" aria-label="剧场大厅"><span>剧场大厅</span></button>
+                    <button class="mit-nav mit-nav-library" type="button" data-view="library" aria-label="剧目库"><span>剧目库</span></button>
+                    <button class="mit-nav mit-nav-history" type="button" data-view="history" aria-label="演出记录"><span>演出记录</span></button>
+                    <button class="mit-nav mit-nav-director" type="button" data-view="director" aria-label="导演室"><span>导演室</span></button>
+                </nav>
                 <div class="mit-sheet-host" aria-live="polite"></div>
-                <div class="mit-toast" role="status"></div>
             </div>
-        </section>`;
+        </section>
+        <section class="mit-reader" role="dialog" aria-modal="true" aria-label="故事阅读"></section>
+        <div class="mit-toast" role="status"></div>`;
     document.body.append(root);
     Object.values(HALL_IMAGE_URLS).forEach((url) => {
         const image = new Image();
         image.src = url;
     });
     bindRootEvents(root);
-    renderLobbyState();
+    theatrePage = 'lobby'; readerOpen = false;
     setCurrentView('lobby');
     showWorkspace();
     requestAnimationFrame(() => root.classList.add('is-open'));
@@ -975,8 +999,8 @@ function openTheatre() {
     createRoot();
     keydownHandler = (event) => {
         if (event.key !== 'Escape') return;
-        const host = document.querySelector(`#${ROOT_ID} .mit-sheet-host`);
-        if (host?.hasChildNodes()) setView('lobby');
+        if (readerOpen) closeReader();
+        else if (theatrePage !== 'lobby') setView('lobby');
         else closeTheatre();
     };
     document.addEventListener('keydown', keydownHandler);
@@ -1019,19 +1043,13 @@ function setCurrentView(view) {
 function setView(view) {
     captureWorkspace();
     queueSessionSave();
-    if (view === 'lobby') {
-        return showWorkspace();
-    }
-    if (view === 'library') return showLibrary();
-    if (view === 'history') { workspaceDrawer = 'works'; return showWorkspace(); }
-    if (view === 'director') {
-        showWorkspace();
-        const options = document.querySelector('.mit-work-advanced');
-        if (options) options.open = true;
-    }
+    theatrePage = view;
+    readerOpen = false;
+    showWorkspace();
 }
 
 function showSheet(view, title, body, className = '') {
+    document.getElementById(ROOT_ID)?.classList.remove('is-reading');
     document.getElementById(ROOT_ID)?.classList.add('has-sheet');
     const host = document.querySelector(`#${ROOT_ID} .mit-sheet-host`);
     if (!host) return;
@@ -1041,11 +1059,13 @@ function showSheet(view, title, body, className = '') {
             <header><h2>${escapeHtml(title)}</h2></header>
             <div class="mit-sheet-body" tabindex="0">${body}</div>
         </section>`;
-    host.querySelector('button, input, select, textarea')?.focus();
+    const heading = host.querySelector('h2');
+    if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
 }
 
 function showLibrary() {
-    const list = settings.library.map((play) => {
+    theatrePage = 'library';
+    const list = getVisiblePlays().map((play) => {
         const searchable = `${play.title} ${play.author || ''} ${play.mode || ''} ${(play.tags || []).join(' ')}`.toLowerCase();
         return `
             <article class="mit-library-item" data-play-id="${escapeHtml(play.id)}" data-search="${escapeHtml(searchable)}">
@@ -1057,7 +1077,7 @@ function showLibrary() {
                 </div>
                 <div class="mit-library-actions">
                     <button class="${isFavorite(play.id) ? 'is-favorite' : ''}" type="button" data-action="toggle-favorite" data-play-id="${escapeHtml(play.id)}">${isFavorite(play.id) ? '★ 已收藏' : '☆ 收藏'}</button>
-                    <button class="mit-add-lobby-button" type="button" data-action="select-play" data-play-id="${escapeHtml(play.id)}">选择上演</button>
+                    <button class="mit-add-lobby-button" type="button" data-action="select-play" data-play-id="${escapeHtml(play.id)}">用这个剧目</button>
                     ${play.builtin ? '' : `<button class="is-danger" type="button" data-action="delete-play" data-play-id="${escapeHtml(play.id)}">删除</button>`}
                 </div>
             </article>`;
@@ -1065,25 +1085,25 @@ function showLibrary() {
 
     showSheet('library', '剧目库', `
         <div class="mit-library-toolbar">
-            <div><button type="button" data-action="return-work">返回创作</button> · <strong>${settings.library.length}</strong> 个剧目 · <strong>${settings.favoriteIds.length}</strong> 个收藏</div>
+            <div><strong>${settings.library.length}</strong> 个剧目 · <strong>${settings.favoriteIds.length}</strong> 个收藏</div>
             <div class="mit-library-tools"><input id="mit-library-search" type="search" placeholder="搜剧名或 @作者"><label class="mit-import-button">导入剧目簿<input id="mit-import-file" type="file" accept="application/json,.json" multiple></label></div>
         </div>
-        <p class="mit-help">这里负责导入和管理剧目。选择文件后会先显示只读预览，确认收录后才进入第一页的完整剧目列表。</p>
-        <div class="mit-library-list">${list}</div>
+        <p class="mit-help">挑一个想演的故事，点「用这个剧目」，再补充你的要求。</p>
+        <details class="mit-library-organize"><summary>筛选、排序与随机挑选</summary><div><select id="mit-library-filter" aria-label="剧目筛选"><option value="all" ${settings.lobbyFilter !== 'favorites' ? 'selected' : ''}>全部剧目</option><option value="favorites" ${settings.lobbyFilter === 'favorites' ? 'selected' : ''}>收藏的剧目</option></select><select id="mit-lobby-sort" aria-label="剧目排序"><option value="latest" ${settings.lobbySort !== 'most-used' ? 'selected' : ''}>最近加入</option><option value="most-used" ${settings.lobbySort === 'most-used' ? 'selected' : ''}>经常使用</option></select><button data-action="random">帮我挑一个</button></div></details>
+        <div class="mit-library-list">${list || '<p class="mit-page-note">还没有收藏剧目，选择「全部剧目」看看吧。</p>'}</div>
     `, 'mit-library-sheet');
     document.querySelectorAll(`#${ROOT_ID} .mit-library-cover[data-cover-play-id]`).forEach((element) => {
         applyCover(element, playById(element.dataset.coverPlayId));
     });
 }
 
-function buildOpeningCue(play, beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext, context = getContext(), options = settings) {
+function buildOpeningCue(play, continueContext = settings.continueContext, context = getContext(), options = settings) {
     const protagonist = settings.protagonist || context?.name2 || '{{char}}';
     const acts = play.acts?.length ? play.acts.join(' / ') : '开幕 / 转折 / 谢幕';
-    const beautification = beautificationMode === 'off' ? '' : `\n默认美化要求：\n${BEAUTIFICATION_PROFILES[beautificationMode]}`;
     const contextRule = continueContext
-        ? '承接当前聊天：结合最近主线中的人物关系、情绪与已知事件，但不要把本场新增事件宣布为主线既定事实。'
+        ? '完整主聊天：结合所提供的全部主线记录中的人物关系、情绪与已知事件；本场新增事件属于独立番外。'
         : '独立番外：不延续最近主线事件，只保持角色设定、Persona 与既有人物关系一致。';
-    return `[无名剧场 · ${play.title}]\n请开始一场独立于主线的小剧场。\n主演：${protagonist}\n演出模式：${options.mode || play.mode}\n上下文方式：${contextRule}\n三幕结构：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n导演备注：${options.directorNote || '保持画面感与角色一致性。'}${beautification}\n演出规则：从第一幕的可感知场景直接开演；保持角色身份、关系与说话方式一致；依据角色卡、Persona 与已有关系描写双方的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；不要复述本条指令；本场内容不改变主线事实。\n输出完整 HTML 文档，包含正文与内嵌 CSS，不要 Markdown 代码围栏或解释。适配手机，奶油纸色与鼠尾草绿，保留清晰留白。所有文字、标题、链接均无下划线或底部装饰线。隐藏全部滚动条外观，保留滚动。仅用 HTML/CSS，可用 details/summary 展开细节；动态档位使用 CSS 动画并尊重减少动态设置。不要脚本、表单、外部资源或链接。内容将在独立预览中展示，不发送到聊天。`;
+    return `【本篇题目】${play.title}\n请按以下资料与要求完成故事。\n人物：${protagonist}\n叙事方式：${options.mode || play.mode}\n上下文方式：${contextRule}\n可参考的故事节奏（具体组织方式以剧目要求为准）：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n补充要求：${options.directorNote || '保持画面感与角色一致性。'}\n创作要求：从具体场景开始；逐项完成剧目要求，涉及天数或数量时按编号写全；涉及血量、金额、时间或触发阈值时核对各步算式，明确区分当前数值与距离目标的差额，确保每次变化、最终数值和结局条件一致；保持角色身份、关系与说话方式一致；依据角色卡、Persona 与已有关系描写双方的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；只呈现作品本身，本场内容不改变主线事实。`;
 }
 
 function filterMainChatMessages(chat) {
@@ -1130,37 +1150,30 @@ function buildCharacterSystemPrompt(context, continueContext = settings.continue
     ].filter(([, value]) => String(value || '').trim())
         .map(([label, value]) => `【${label}】\n${String(value).trim()}`);
     return [
-        '你正在 SillyTavern 中为当前角色与用户演出一次独立番外小剧场。',
+        '你是一名为读者创作完整故事并设计阅读页面的作者。最终只交付作品正文及其 HTML/CSS。',
         sequel ? '本次由用户明确要求创作后续篇章。给定前篇是已完成的故事，保留其事实与结局，从结局之后展开并写完新篇章，仅输出新增内容。' : continueContext
             ? '只把提供的主聊天快照当作人物关系、说话习惯与主线背景；不要续写或引用任何历史小剧场。'
             : '本次不提供主聊天快照；只依据角色卡、Persona 与剧目要求演出独立番外。',
-        '本次任务是一次完成的完整番外故事：写出开端、发展、转折和明确结局；依据角色卡与 Persona 合理描写双方言行，并在故事内部完成选择。此完成方式优先于剧目、角色卡或聊天中要求等待用户回复、分轮互动的写作方式。严格保持人物一致性，本场新增事件仅属于番外。',
+        '本次任务是一次完成的独立故事：写出开端、发展、转折和明确结局；依据角色卡与 Persona 合理描写双方言行，并在故事内部完成选择。此完成方式优先于剧目、角色卡或聊天中要求等待用户回复、分轮互动的写作方式。严格保持人物一致性，本场新增事件仅属于番外。番外隔离、上下文来源和生成过程都是内部执行规则，不得作为免责声明、脚注或界面说明写入作品；作品只呈现故事本身。',
         ...sections,
-    ].join('\n\n').slice(0, 24000);
+    ].join('\n\n');
 }
 
-function buildGenerationMessages(context, play, beautificationMode, continueContext = settings.continueContext, reservedCharacters = 0, options = settings) {
+function buildGenerationMessages(context, play, beautificationMode, continueContext = settings.continueContext, options = settings) {
     const mainChat = continueContext ? filterMainChatMessages(context.chat) : [];
-    let cue = context.substituteParams(buildOpeningCue(play, beautificationMode, continueContext, context, options));
+    let cue = context.substituteParams(buildOpeningCue(play, continueContext, context, options));
     if (options.previousText) cue += `\n\n【已完成前篇，仅作续写依据】\n${options.previousText}\n\n【用户的后续要求】\n${options.sequel}\n从前篇结局之后继续，完整写完新增篇章，前篇保持原样。`;
-    const totalCharacterBudget = Math.max(18000, Math.min(90000, Math.max(0, Number(context.maxContext || 0) - 4096) * 3));
-    if (options.previousText && cue.length + reservedCharacters > totalCharacterBudget) throw new Error('前篇超出当前模型的上下文预算，请切换更大上下文后续写；原文已保留');
-    const maxCharacters = Math.max(4000, totalCharacterBudget - reservedCharacters - cue.length);
-    const selected = [];
-    let usedCharacters = 0;
-    for (let index = mainChat.length - 1; index >= 0; index -= 1) {
-        const message = mainChat[index];
+    const selected = mainChat.map(message => {
         const speaker = String(message.name || (message.is_user ? context.name1 : context.name2) || '').trim();
-        let content = `${speaker ? `${speaker}：` : ''}${String(message.mes || '').trim()}`;
-        if (!content || (selected.length && usedCharacters + content.length > maxCharacters)) break;
-        if (!selected.length && content.length > maxCharacters) content = content.slice(-maxCharacters);
-        usedCharacters += content.length;
-        selected.unshift({
+        return {
             role: message.is_system ? 'system' : (message.is_user ? 'user' : 'assistant'),
-            content,
-        });
-    }
+            content: `${speaker ? `${speaker}：` : ''}${String(message.mes || '')}`,
+        };
+    });
     selected.push({ role: 'user', content: cue });
+    // generateRaw owns this ordered message list. D0 follows all context, the
+    // creative request and any previous chapters, immediately before generation.
+    selected.push({ role: 'system', content: context.substituteParams(buildVisualGuidance(beautificationMode)) });
     return selected;
 }
 
@@ -1217,8 +1230,11 @@ async function startPerformance(play = selectedPlay(), beautificationMode = sett
     try {
         if (previous && (previous.source?.key ? previous.source.key !== source.key : previous.chatId !== context.chatId)) throw new Error('请切回这部作品的原聊天后续写，保持人物和背景一致');
         const systemPrompt = buildCharacterSystemPrompt(context, continueContext, Boolean(previous));
+        const prompt = buildGenerationMessages(context, frozenPlay, beautificationMode, continueContext, run);
+        const sources = await loadGenerationSources(context);
+        if (targetIdentity()?.key !== source.key) throw new Error('聊天已切换，请在目标聊天重新开始；本次尚未发送');
         const output = await context.generateRaw({
-            prompt: buildGenerationMessages(context, frozenPlay, beautificationMode, continueContext, systemPrompt.length, run),
+            prompt: [...sources, ...prompt],
             systemPrompt,
             trimNames: false,
         });
@@ -1249,10 +1265,14 @@ async function startPerformance(play = selectedPlay(), beautificationMode = sett
         session.form = { ...session.form, ...entry.form, title:entry.title }; session.sequelOpen = false; session.sequel = '';
         await saveCurrentWork(false);
         saveSettings();
+        if (document.getElementById(ROOT_ID)?.classList.contains('is-open')) { readerReturnView = 'history'; readerOpen = true; }
         toast(`《${frozenPlay.title}》创作完成，聊天未发送`, 'success');
     } catch (error) {
         console.error(`[${EXTENSION_ID}] failed to start performance`, error);
-        toast(`开演失败：${error?.message || '未知错误'}`, 'error');
+        const reason = /context.*(length|limit|exceed)|too many tokens|maximum.*tokens/i.test(error?.message || '')
+            ? '全部上下文超过模型容量。请换更大上下文的模型，或关闭「发送全部聊天上下文」；已有故事已保留。'
+            : error?.message || '未知错误';
+        toast(`开演失败：${reason}`, 'error');
     } finally {
         generationInFlight = false;
         if (document.getElementById(ROOT_ID)?.classList.contains('is-open')) showWorkspace();
@@ -1373,7 +1393,7 @@ async function handleAction(action, target) {
         settings.selectedId = play.id;
         saveSettings();
         renderLobbyState();
-        return toast(`今晚抽到《${play.title}》`, 'success');
+        return usePlay(play);
     }
     if (action === 'confirm-start') return usePlay(selectedPlay());
     if (action === 'set-filter') {
@@ -1448,6 +1468,10 @@ function bindRootEvents(root) {
         }
         if (event.target.closest('#mit-work-form')) { captureWorkspace(); queueSessionSave(); }
         if (event.target.id === 'mit-import-file') prepareImportFiles([...event.target.files]);
+        if (event.target.id === 'mit-library-filter') {
+            settings.lobbyFilter = event.target.value === 'favorites' ? 'favorites' : 'all';
+            saveSettings(); showLibrary();
+        }
         if (event.target.id === 'mit-lobby-sort') {
             settings.lobbySort = event.target.value === 'most-used' ? 'most-used' : 'latest';
             saveSettings();
@@ -1456,7 +1480,7 @@ function bindRootEvents(root) {
     });
 
     root.addEventListener('input', (event) => {
-        if (event.target.closest('.mit-workspace-sheet')) {
+        if (event.target.closest('.mit-workspace-sheet, .mit-reader')) {
             captureWorkspace();
             storageMessage = '正在保存编辑草稿…'; updateWorkspaceStatus();
             clearTimeout(sessionSaveTimer); sessionSaveTimer = setTimeout(queueSessionSave, 250);
@@ -1480,8 +1504,8 @@ function bindRootEvents(root) {
         settings.beautificationEnabled = data.get('beautificationEnabled') === 'on';
         settings.beautificationMode = data.get('beautificationMode') === 'dynamic' ? 'dynamic' : 'static';
         saveSettings();
-        setView('lobby');
-        toast('导演设置已保存', 'success');
+        setView('director');
+        toast('默认设置已保存，新故事会使用这些设置', 'success');
     });
 }
 

@@ -10,6 +10,7 @@
 #mit-root::-webkit-scrollbar,
 #mit-root *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 #mit-root hr { display: none; }
+#mit-root [hidden] { display: none !important; }
 
 #mit-root {
     --mit-ink: #272624;
@@ -111,11 +112,12 @@
 
 .mit-close:hover { color: #fff; }
 
-.mit-nav { left: 3.7%; width: 22.2%; height: 12.8%; }
-.mit-nav-lobby { top: 21.1%; }
-.mit-nav-library { top: 38.1%; }
-.mit-nav-history { top: 55.5%; }
-.mit-nav-director { top: 72.4%; }
+.mit-nav { left: 4.6%; width: 16.8%; height: 11.4%; }
+.mit-nav > span { display: none; }
+.mit-nav-lobby { top: 22%; }
+.mit-nav-library { top: 39.1%; }
+.mit-nav-history { top: 56.1%; }
+.mit-nav-director { top: 73.1%; }
 .mit-program-panel {
     position: absolute;
     z-index: 3;
@@ -577,166 +579,6 @@
 .mit-library-actions .mit-add-lobby-button { border-color: #6e3a28; background: #3b2a21; color: #f5dfb4; }
 .mit-library-actions .is-danger { color: #9d351e; }
 
-/* Storybook library surface. Live text, covers, and controls remain interactive. */
-#mit-root .mit-library-sheet {
-    background: transparent; border: 0; border-radius: 0; color: #596047;
-}
-
-#mit-root .mit-library-sheet > header {
-    min-height: 38px; align-items: center; padding: 0 2% 10px; border: 0; background: transparent; box-shadow: none;
-}
-
-#mit-root .mit-library-sheet > header::after {
-    content: none;
-}
-
-#mit-root .mit-library-sheet h2 {
-    min-width: 0;
-    min-height: 0;
-    display: block;
-    padding: 0 0 4px;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #8b5364;
-    font-family: Georgia, "Songti SC", "Noto Serif CJK SC", "SimSun", serif;
-    font-size: clamp(20px, 1.85vw, 30px);
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-shadow: 1px 2px #f4c6a1;
-    box-shadow: none;
-    clip-path: none;
-}
-
-#mit-root .mit-library-sheet .mit-sheet-body {
-    padding: 6px 2% 12px;
-}
-
-#mit-root .mit-library-sheet .mit-library-toolbar {
-    min-height: 50px;
-    padding: 7px 10px;
-    border: 2px solid #9b6170;
-    border-radius: 5px;
-    outline: 0;
-    background: rgba(255, 237, 200, .88);
-    color: #7a4b59;
-    box-shadow: 4px 4px 0 #efaa87, inset 0 0 0 2px rgba(255, 249, 222, .55);
-}
-
-#mit-root .mit-library-sheet #mit-library-search {
-    border: 2px solid #9c6472;
-    border-radius: 5px;
-    background: #fff0ce;
-    color: #704858;
-    box-shadow: 3px 3px 0 #efaa88;
-}
-
-#mit-root .mit-library-sheet .mit-import-button {
-    border: 2px solid #8c5361;
-    border-radius: 7px;
-    background: #f39b77;
-    color: #613b48;
-    box-shadow: 3px 3px 0 #f6cf8e;
-}
-
-#mit-root .mit-library-sheet .mit-help {
-    max-width: none;
-    border-bottom-color: rgba(154, 91, 105, .52);
-    color: #7b5560;
-}
-
-#mit-root .mit-library-sheet .mit-help::before { color: #e57869; }
-
-#mit-root .mit-library-sheet .mit-library-list { gap: 11px; }
-
-#mit-root .mit-library-sheet .mit-library-item {
-    grid-template-columns: 78px minmax(0, 1fr) auto;
-    gap: 15px;
-    padding: 10px 12px;
-    border: 2px solid #9b6170;
-    border-radius: 6px;
-    outline: 0;
-    background: rgba(255, 239, 207, .92);
-    box-shadow: 5px 5px 0 #eea184, inset 0 0 0 2px rgba(255, 250, 226, .58);
-    clip-path: none;
-}
-
-#mit-root .mit-library-sheet .mit-library-item::before { display: none; }
-
-#mit-root .mit-library-sheet .mit-library-item:nth-child(even) {
-    background: rgba(250, 224, 185, .94);
-    box-shadow: 5px 5px 0 #e9b867, inset 0 0 0 2px rgba(255, 248, 220, .55);
-}
-
-#mit-root .mit-library-sheet .mit-library-item:hover {
-    border-color: #80505e;
-    background: #fff0cf;
-    transform: translate(-1px, -1px);
-}
-
-#mit-root .mit-library-sheet .mit-library-cover {
-    width: 78px;
-    height: 94px;
-    justify-self: start;
-    border: 2px solid #8d5967;
-    border-radius: 8px;
-    background-color: #f6c79f;
-    box-shadow: 4px 4px 0 #e89579;
-    filter: saturate(.78) sepia(.12) brightness(1.06);
-}
-
-#mit-root .mit-library-sheet .mit-library-copy h3 {
-    color: #6f4252;
-    font-family: Georgia, "Songti SC", "Noto Serif CJK SC", "SimSun", serif;
-}
-
-#mit-root .mit-library-sheet .mit-library-copy p,
-#mit-root .mit-library-sheet .mit-library-meta { color: #795a61; }
-
-#mit-root .mit-library-sheet .mit-author-stamp {
-    border-color: #df7d6e;
-    border-radius: 8px;
-    background: rgba(255, 210, 168, .58);
-    color: #a45762;
-}
-
-#mit-root .mit-library-sheet .mit-library-meta strong {
-    border-color: #9b5c69;
-    border-radius: 5px;
-    background: #ef9b79;
-    color: #633c49;
-}
-
-#mit-root .mit-library-sheet .mit-library-actions {
-    width: auto;
-    max-width: 184px;
-    align-items: stretch;
-}
-
-#mit-root .mit-library-sheet .mit-library-actions button {
-    width: auto;
-    min-width: 78px;
-    min-height: 30px;
-    padding: 4px 9px;
-    border: 2px solid #95606c;
-    border-radius: 7px;
-    background: #f8d9a6;
-    color: #6b4652;
-    font-size: 11px;
-    box-shadow: 3px 3px 0 #efae80;
-}
-
-#mit-root .mit-library-sheet .mit-library-actions .mit-add-lobby-button {
-    border-color: #8f5361;
-    background: #ef9475;
-    color: #5f3946;
-}
-
-#mit-root .mit-library-sheet .mit-library-actions .is-favorite {
-    background: #f5c36f;
-    color: #6f4651;
-}
-
 .mit-history-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -857,7 +699,8 @@
 .mit-confirm-sheet .mit-confirm-actions button, .mit-detail-sheet .mit-confirm-actions button { min-height: 38px; padding: 8px 20px; border: 1px solid #b9c49f; border-radius: 20px; background: #f7f2e4; color: #5b694a; box-shadow: none; }
 .mit-confirm-sheet .mit-confirm-actions .mit-primary, .mit-detail-sheet .mit-confirm-actions .mit-primary { background: #718365; border-color: #718365; color: #fffbed; }
 .mit-detail-copy textarea:focus-visible { outline: 2px solid #91a477; outline-offset: 2px; }
-.mit-nav.is-current::after { content: '✦'; position: absolute; right: 20%; top: 50%; transform: translateY(-50%); color: #697c55; font-size: clamp(12px, 1.5vw, 22px); text-shadow: 0 1px #fff6df; }
+.mit-nav.is-current { background: rgba(85,110,66,.20); border-radius: 8px; box-shadow: 0 0 0 3px #637851, 0 6px 16px #43513538; }
+.mit-nav.is-current::after { content: '当前'; position: absolute; right: 6%; bottom: 4%; color: #fffdf2; background: #526846; padding: 3px 8px; border-radius: 6px; font: 12px/1.3 sans-serif; }
 
 .mit-import-preview-list { display: grid; gap: 10px; margin-bottom: 18px; }
 .mit-import-macro-tools {
@@ -990,67 +833,148 @@
 .mit-draft-frame { width: 100%; flex: 1; min-height: 140px; border: 1px solid #d9dac6; border-radius: 12px; background: #fffaf0; }
 .mit-draft-sheet .mit-confirm-actions { flex-shrink: 0; margin-top: 0; }
 
-/* Workbench content stays inside the existing paper's blank area. */
-.mit-workspace-sheet { left: 28.5%; top: 23.5%; width: 64%; height: 66%; }
-.mit-workspace-sheet > header { min-height: 28px; padding-bottom: 5px; }
-.mit-workspace-sheet .mit-sheet-body { padding: 4px 2% 16px; }
-.mit-work-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 5px 0 10px; }
-#mit-root .mit-work-tools button,
-#mit-root .mit-file-button { min-height: 34px; padding: 6px 12px; border: 0; border-radius: 18px; background: #e9ecdc; color: #47553f; font: inherit; font-size: 13px; cursor: pointer; box-shadow: none; }
-#mit-root .mit-work-tools button:hover { background: #dce3cb; }
-#mit-root .mit-work-tools .mit-primary { background: #637851; color: #fffdf1; font-weight: 700; padding-inline: 18px; }
-#mit-root .mit-work-tools button:disabled { opacity: .5; cursor: default; }
-.mit-work-tools label { display: flex; align-items: center; gap: 6px; }
-.mit-work-tools span, .mit-work-hint { color: #65745b; font-size: 12px; line-height: 1.7; }
-#mit-work-status { flex: 1; min-width: 130px; }
-.mit-work-form fieldset { display: grid; gap: 10px; border: 0; margin: 0; padding: 0; min-width: 0; }
-.mit-work-form label, .mit-sequel label { display: grid; gap: 5px; font-size: 14px; }
-.mit-work-form .mit-checkbox-row { display: flex; }
-.mit-work-heading { display: flex; gap: 12px; align-items: center; }
-.mit-work-heading label { flex: 1; min-width: 0; }
-.mit-work-cover { width: 62px; height: 68px; flex: 0 0 62px; border-radius: 12px; }
-#mit-root .mit-workspace-sheet input:not([type=checkbox]):not([type=file]),
-#mit-root .mit-workspace-sheet textarea,
-#mit-root .mit-workspace-sheet select { width: 100%; min-width: 0; padding: 8px 10px; border: 0; border-radius: 9px; background: rgba(255,253,243,.72); color: #3f4c39; font: 14px/1.65 "Microsoft YaHei",sans-serif; box-shadow: none; outline-offset: 2px; }
-#mit-root .mit-workspace-sheet select { width: auto; max-width: 180px; }
-#mit-root .mit-workspace-sheet textarea { resize: vertical; min-height: 70px; }
-#mit-root .mit-workspace-sheet input[type=checkbox] { width: 17px; height: 17px; accent-color: #748363; }
-.mit-work-advanced { font-size: 13px; margin-bottom: 10px; }
-.mit-work-advanced summary, .mit-work-request > summary { cursor: pointer; color: #637456; padding: 6px 0; font-size: 13px; }
-.mit-work-advanced[open] { display: grid; gap: 10px; }
-.mit-work-result { margin-top: 8px; }
-#mit-root .mit-work-result .mit-draft-frame { display: block; height: clamp(230px, 34vh, 430px); min-height: 230px; width: 100%; border: 0; }
-#mit-root #mit-work-editor { display: block; height: clamp(230px,34vh,430px); font-size: 16px; line-height: 1.9; }
-.mit-work-empty { margin: 22px 0; font: 16px/1.9 "SimSun",serif; color: #748064; }
-.mit-work-list { max-height: 240px; overflow: auto; padding: 7px 0; }
-#mit-root .mit-work-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; border: 0; border-radius: 8px; background: rgba(245,246,226,.65); padding: 12px; color: #45553d; text-align: left; margin: 5px 0; cursor: pointer; }
-.mit-work-row span { font-size: 12px; }
+
+/* One purpose per page; completed stories open in the independent reader. */
+#mit-root { --mit-accent: #637851; --mit-ink: #3f4936; }
+#mit-root .mit-sheet { left: 28.5%; top: 23.5%; width: 64%; height: 66%; }
+#mit-root .mit-sheet > header { min-height: 40px; padding: 0 2% 12px; background: none; }
+#mit-root .mit-sheet > header h2 { color: #4c5940; font: 600 25px/1.3 'SimSun',serif; letter-spacing: .08em; }
+#mit-root .mit-sheet > header::after { display: none; }
+#mit-root .mit-sheet .mit-sheet-body { padding: 6px 2% 24px; overflow: auto; display: block; }
+#mit-root button, #mit-root summary { -webkit-tap-highlight-color: transparent; }
+#mit-root button:focus-visible, #mit-root summary:focus-visible, #mit-root input:focus-visible, #mit-root textarea:focus-visible, #mit-root select:focus-visible { outline: 2px solid #6b7d59; outline-offset: 3px; }
+#mit-root .mit-workspace-sheet button, #mit-root .mit-file-button, #mit-root .mit-reader button { min-height: 42px; padding: 9px 16px; border: 0; border-radius: 10px; background: #e5e8d5; color: #43553a; font: 14px/1.5 'Microsoft YaHei',sans-serif; cursor: pointer; box-shadow: none; }
+#mit-root .mit-workspace-sheet button:hover, #mit-root .mit-reader button:hover { background: #d6dec4; }
+#mit-root .mit-workspace-sheet .mit-primary, #mit-root .mit-reader .mit-primary { background: #617650; color: #fffdf2; font-weight: 600; }
+#mit-root button:disabled { opacity: .5; cursor: default; }
+#mit-root .mit-page-intro { margin: 0 0 22px; color: #69715c; font-size: 15px; line-height: 1.8; }
+#mit-root .mit-page-note { color: #777c6a; font-size: 13px; line-height: 1.8; margin: 18px 0 0; }
+.mit-eyebrow { display: block; color: #839072; font: 12px/1.6 'Microsoft YaHei',sans-serif; letter-spacing: .12em; }
+.mit-lobby-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+#mit-root .mit-start-choice { position: relative; display: grid; gap: 9px; min-height: 144px; padding: 22px; text-align: left; background: rgba(255,253,241,.76); outline: 1px solid #d6ceaf; border-radius: 14px; }
+.mit-start-choice strong { font: 600 21px/1.4 'SimSun',serif; color: #45553a; }
+.mit-start-choice > span:last-of-type { font-size: 13px; color: #7d806b; }
+.mit-start-choice b { position: absolute; right: 20px; top: 19px; color: #899771; font-size: 22px; }
+.mit-choice-number { color: #929d7c; font: italic 16px Georgia,serif; }
+.mit-recent-work { position: relative; margin-top: 24px; padding: 19px 140px 19px 22px; border-radius: 12px; background: #e3e8d3a6; }
+.mit-recent-work h3 { margin: 6px 0; font: 600 20px/1.4 'SimSun',serif; color: #4c5b40; }
+.mit-recent-work p { margin: 0; font-size: 13px; color: #788369; }
+#mit-root .mit-recent-work button { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); }
+#mit-root .mit-text-button { padding-left: 0; background: none; color: #778264; font-size: 13px; }
+.mit-work-form fieldset { display: grid; gap: 18px; min-width: 0; padding: 0; margin: 0; border: 0; }
+.mit-work-form label, .mit-sequel label, #mit-root .mit-director-form label { display: grid; gap: 8px; color: #536046; font: 14px/1.6 'Microsoft YaHei',sans-serif; }
+#mit-root .mit-workspace-sheet input:not([type=checkbox]):not([type=file]), #mit-root .mit-workspace-sheet textarea, #mit-root .mit-workspace-sheet select, #mit-root .mit-reader textarea, #mit-root .mit-reader select { width: 100%; min-width: 0; border: 0; border-radius: 9px; background: #fffdf3bd; color: #3f4c39; padding: 10px 13px; font: 16px/1.7 'Microsoft YaHei',sans-serif; box-shadow: none; }
+#mit-root .mit-workspace-sheet textarea { min-height: 100px; resize: vertical; }
+#mit-root .mit-checkbox-row { display: flex; align-items: center; gap: 9px; font-size: 14px; }
+#mit-root input[type=checkbox] { width: 18px; height: 18px; accent-color: #697f57; }
+.mit-work-advanced summary, .mit-archive-tools summary { cursor: pointer; padding: 7px 0; color: #778365; font-size: 14px; }
+.mit-work-advanced[open] { display: grid; gap: 12px; }
+.mit-compose-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+.mit-work-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 16px; }
+.mit-work-tools span { color: #768067; font-size: 13px; }
+.mit-records-list { display: grid; gap: 12px; }
+#mit-root .mit-work-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; text-align: left; padding: 19px 21px; border-radius: 12px; background: #fffcf0b3; }
+.mit-work-row strong { display: block; font: 600 21px/1.5 'SimSun',serif; color: #526044; }
+.mit-work-row small { display: block; margin-top: 5px; color: #869079; font-size: 13px; }
+.mit-work-row b { font-size: 13px; font-weight: 400; white-space: nowrap; }
+.mit-archive-tools { margin-top: 26px; font-size: 13px; color: #7d826c; }
+.mit-file-button { display: inline-flex; align-items: center; cursor: pointer; }
 .mit-file-button input { display: none; }
-.mit-sequel { display: grid; gap: 8px; margin: 12px 0; }
-.mit-sequel .mit-primary { justify-self: end; }
+#mit-root .mit-library-toolbar { border: 0; background: none; box-shadow: none; padding: 0; gap: 10px; margin: 0 0 14px; font-size: 13px; }
+#mit-root .mit-library-tools { gap: 10px; }
+#mit-root #mit-library-search { border: 0; border-radius: 9px; box-shadow: none; background: #fffdf0bf; color: #546144; min-height: 42px; font-size: 14px; padding: 8px 12px; }
+#mit-root .mit-import-button { border: 0; border-radius: 9px; box-shadow: none; background: #e4e8d4; color: #536343; min-height: 42px; padding: 9px 12px; font-size: 13px; }
+#mit-root .mit-library-sheet .mit-help { display: block; font-size: 14px; line-height: 1.7; margin: 0 0 16px; }
+#mit-root .mit-library-list { display: grid; grid-auto-rows: auto; gap: 14px; overflow: visible; padding: 0; scroll-snap-type: none; }
+#mit-root .mit-library-item { grid-template-columns: 76px minmax(0,1fr) 100px; gap: 15px; padding: 15px; min-height: 134px; overflow: visible; border: 0; background: #fffaf0b0; border-radius: 12px; box-shadow: none; }
+#mit-root .mit-library-cover { width: 76px; height: 96px; border: 1px solid #c5caa8; border-radius: 8px; box-shadow: none; background-color: #efe7ce; }
+#mit-root .mit-library-item::before { display: none; }
+#mit-root .mit-library-item:hover { transform: none; background: #fffdf1dd; }
+#mit-root .mit-library-copy h3 { color: #556344; }
+#mit-root .mit-library-copy p, #mit-root .mit-library-meta { color: #7a816a; }
+#mit-root .mit-author-stamp, #mit-root .mit-library-meta strong { background: #e8ecd8; color: #74815f; border: 0; border-radius: 6px; }
+#mit-root .mit-library-actions button { background: #eceede; color: #5e6b4c; border-radius: 8px; }
+#mit-root .mit-library-actions .mit-add-lobby-button { background: #647a52; color: #fffced; }
+#mit-root .mit-library-actions .is-favorite { background: #d5dfbf; color: #4d6340; }
+.mit-library-organize { margin-bottom: 16px; color: #7a846b; font-size: 13px; }
+.mit-library-organize summary { cursor: pointer; padding: 6px 0; }
+.mit-library-organize > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 0; }
+#mit-root .mit-library-organize select, #mit-root .mit-library-organize button { min-height: 40px; padding: 8px 11px; border: 0; border-radius: 8px; background: #f8f7e9; color: #5c6b4d; font: 14px sans-serif; }
+#mit-root .mit-library-title-line { flex-wrap: wrap; gap: 5px 9px; }
+#mit-root .mit-library-copy h3 { font-size: 18px; white-space: normal; }
+#mit-root .mit-library-copy p { font-size: 13px; line-height: 1.65; white-space: normal; margin: 8px 0; }
+#mit-root .mit-library-meta { flex-wrap: wrap; font-size: 11px; }
+#mit-root .mit-library-meta span:last-child { display: none; }
+#mit-root .mit-library-actions { max-width: none; flex-direction: column; gap: 6px; justify-content: center; }
+#mit-root .mit-library-actions button { width: 100%; font-size: 13px; min-height: 40px; padding: 8px; border: 0; box-shadow: none; }
+#mit-root .mit-director-form { gap: 16px; }
+#mit-root .mit-director-form > button { justify-self: start; }
 #mit-quick-open { border: 0; border-radius: 6px; padding: 5px 7px; color: inherit; background: transparent; font: inherit; cursor: pointer; text-decoration: none; }
-.mit-workspace-sheet :focus-visible { outline: 2px solid #6b7d59; }
-@media(max-width: 760px) {
-    .mit-overlay { overflow: auto; align-items: start; }
-    .mit-theatre { width: 100%; min-height: 100dvh; aspect-ratio: auto; background: #eee5cb; }
-    .mit-stage { min-height: 100dvh; aspect-ratio: auto; padding-top: 19vw; overflow: visible; }
+#mit-root > .mit-toast { position: fixed; z-index: 20; left: 50%; bottom: 28px; max-width: min(600px,90vw); }
+#mit-root.is-reading > .mit-toast { bottom: 88px; }
+.mit-reader { display: none; }
+#mit-root.is-reading .mit-theatre { display: none; }
+#mit-root.is-reading { padding: 0; }
+#mit-root.is-reading .mit-reader { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0,1fr) auto; background: #eee8d9; color: #43543a; }
+.mit-reader-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px max(12px,env(safe-area-inset-right)) 4px max(12px,env(safe-area-inset-left)); padding-top: max(4px,env(safe-area-inset-top)); background: #f9f6ec; z-index: 2; }
+#mit-root .mit-reader-header button, #mit-root .mit-reader-header select { min-height: 44px; padding: 8px 12px; font-size: 13px; }
+.mit-reader-chapter { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#mit-root .mit-reader-chapter select { width: auto; max-width: 140px; background: #eceede; }
+.mit-reader-content { display: flex; justify-content: center; min-height: 0; overflow: auto; padding: 0; }
+.mit-reader-frame { display: block; flex: 1 1 100%; min-width: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.mit-context-help { margin: -6px 0 0; color: #778068; font: 12px/1.7 system-ui,sans-serif; }
+#mit-root #mit-work-editor { display: block; width: min(100%,940px); height: 100%; min-height: 200px; resize: none; padding: 32px 40px; background: #fffaf0; font-size: 18px; line-height: 1.95; }
+.mit-reader-footer { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 12px 28px max(12px,env(safe-area-inset-bottom)); background: #f9f6ec; }
+.mit-reader-footer #mit-work-status { font-size: 12px; color: #7d876f; }
+.mit-reader-actions { display: flex; align-items: center; gap: 9px; }
+.mit-reader-more summary { padding: 11px 14px; min-height: 44px; font-size: 14px; cursor: pointer; }
+.mit-reader-more > div { position: absolute; right: 28px; bottom: calc(100% - 2px); display: grid; gap: 9px; width: 240px; padding: 18px; background: #fffdf3; box-shadow: 0 -8px 40px #343e2826; border-radius: 14px; }
+.mit-reader-more p { margin: 10px 3px 0; font-size: 12px; color: #7c846d; }
+.mit-sequel { width: min(640px,100%); align-self: start; display: grid; gap: 18px; padding: 32px 12px; }
+.mit-sequel h3 { margin: 0; font: 600 27px/1.5 'SimSun',serif; }
+.mit-sequel p { margin: 0; color: #758268; font-size: 15px; line-height: 1.8; }
+#mit-root .mit-sequel textarea { min-height: 170px; resize: vertical; }
+@media(max-width:760px), (max-height:560px) {
+    .mit-overlay { overflow: auto; align-items: start; padding: 0; }
+    .mit-theatre { width: 100%; min-height: 100dvh; aspect-ratio: auto; background: #efe6cf; }
+    .mit-stage { min-height: 100dvh; aspect-ratio: auto; padding-top: min(19vw,145px); overflow: visible; }
     .mit-hall-art { height: auto; aspect-ratio: 3/2; object-fit: contain; top: 0; clip-path: inset(0 0 77% 0); }
+    .mit-navigation { position: sticky; top: 0; z-index: 12; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; padding: 10px 12px; background: #efe6cfee; backdrop-filter: blur(12px); }
+    .mit-stage .mit-nav { position: relative; display: flex; align-items: center; justify-content: center; left: auto; top: auto; width: auto; height: auto; min-height: 46px; padding: 8px 3px; color: #697355; background: #fbf8ec; border-radius: 10px; font: 14px/1.4 'Microsoft YaHei',sans-serif; }
+    .mit-nav > span { display: block; }
+    .mit-stage .mit-nav.is-current { background: #627651; color: #fffdf2; box-shadow: none; font-weight: 600; }
+    .mit-nav.is-current::after { display: none; }
     .mit-sheet-host { position: relative; z-index: 8; }
-    .mit-sheet { position: relative; left: auto; top: auto; width: 90%; height: auto; margin: 0 5%; max-height: none; overflow: visible; }
-    .mit-sheet-body { overflow: visible; }
-    .mit-stage .mit-nav { display: none; }
-    .mit-program-panel { position: relative; left: auto; top: auto; width: 90%; height: auto; margin: 0 5%; padding-bottom: 20px; }
-    .mit-program-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
-    .mit-program-scroll { max-height: 65dvh; flex: 0 1 auto; }
-    .mit-program-heading { flex-wrap: wrap; padding: 12px 0; }
-    .mit-program-toolbar button, .mit-program-toolbar select, .mit-program-count { font-size: 13px; }
-    .mit-card-label { font-size: 14px; }
-    .mit-current-title, .mit-selection-summary small { font-size: 12px; }
-    .mit-workspace-sheet { padding-top: 7px; }
-    .mit-workspace-sheet > header { padding: 0 2% 12px; }
-    .mit-workspace-sheet .mit-sheet-body { padding-bottom: 26px; }
-    #mit-root .mit-workspace-sheet .mit-draft-frame { height: 48dvh; min-height: 290px; }
-    #mit-root .mit-workspace-sheet input:not([type=checkbox]),
-    #mit-root .mit-workspace-sheet textarea { font-size: 16px; }
-    .mit-close { position: fixed; width: 36px; height: 36px; right: 5px; top: 4px; border-radius: 50%; background: #53614b; color: #fffaf0; }
+    #mit-root .mit-sheet { position: relative; left: auto; top: auto; width: auto; height: auto; margin: 14px 18px 0; max-height: none; overflow: visible; }
+    #mit-root .mit-sheet > header { padding: 6px 4px 14px; }
+    #mit-root .mit-sheet > header h2 { font-size: 24px; }
+    #mit-root .mit-sheet .mit-sheet-body { padding: 6px 4px 36px; overflow: visible; }
+    #mit-root .mit-page-intro { font-size: 15px; }
+    .mit-lobby-choices { grid-template-columns: 1fr; gap: 14px; }
+    #mit-root .mit-start-choice { min-height: 122px; padding: 19px 22px; gap: 6px; }
+    .mit-start-choice strong { font-size: 21px; }
+    .mit-recent-work { margin-top: 18px; padding: 19px 120px 19px 18px; }
+    #mit-root .mit-recent-work button { right: 14px; padding-inline: 12px; }
+    .mit-recent-work h3 { font-size: 19px; }
+    .mit-close { position: fixed; z-index: 18; width: 32px; height: 32px; right: 7px; top: 5px; border-radius: 50%; background: #53614b; color: #fffaf0; }
+    #mit-root .mit-library-toolbar, #mit-root .mit-library-tools { align-items: stretch; flex-direction: column; }
+    #mit-root #mit-library-search { width: 100%; }
+    #mit-root .mit-library-tools { display: grid; grid-template-columns: minmax(0,1fr) auto; }
+    #mit-root .mit-library-item { grid-template-columns: 64px minmax(0,1fr); gap: 13px; padding: 16px; }
+    #mit-root .mit-library-cover { width: 64px; height: 82px; }
+    #mit-root .mit-library-copy h3 { font-size: 19px; }
+    #mit-root .mit-library-copy p { font-size: 14px; }
+    #mit-root .mit-library-actions { grid-column: 1/-1; flex-direction: row; justify-content: flex-end; }
+    #mit-root .mit-library-actions button { width: auto; min-height: 44px; padding: 10px 16px; font-size: 14px; }
+    #mit-root .mit-work-row { padding: 17px 16px; gap: 10px; }
+    .mit-work-row strong { font-size: 20px; }
+    .mit-work-row b { font-size: 12px; }
+    #mit-root .mit-reader-chapter select { max-width: 115px; }
+    #mit-root #mit-work-editor { padding: 22px; font-size: 18px; }
+    .mit-reader-footer { flex-direction: column; align-items: stretch; gap: 6px; padding: 9px 12px max(9px,env(safe-area-inset-bottom)); }
+    .mit-reader-footer #mit-work-status { font-size: 11px; }
+    .mit-reader-actions { justify-content: space-between; gap: 6px; }
+    #mit-root .mit-reader-actions button { font-size: 13px; padding: 9px 12px; min-height: 44px; }
+    .mit-reader-more > div { right: 12px; }
+    .mit-sequel { padding: 28px 22px; }
 }

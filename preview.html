@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>无名剧场 · 插件预览</title>
-    <link rel="stylesheet" href="./style.css?rev=workbench-v060">
+    <link rel="stylesheet" href="./style.css?rev=art-direction-v1">
     <style>
         html, body { margin: 0; min-height: 100%; background: #140b08; font-family: system-ui, sans-serif; }
         #preview-chat { max-width: 760px; margin: 40px auto; padding: 24px; color: #ead4a6; }
@@ -26,8 +26,10 @@
 </head>
 <body data-mit-preview="true">
     <div id="extensionsMenu"></div><div id="leftSendForm"></div>
-    <main id="preview-chat"><h1>小剧场 · 模拟聊天</h1><p>本地演示：使用固定示例内容，不连接模型，也不写入真实酒馆。</p><div id="preview-messages"></div><p id="preview-result" role="status" aria-live="polite">聊天保持 2 条；生成结果留在剧场的演出记录中。</p></main>
+    <main id="preview-chat"><h1>小剧场 · 模拟聊天</h1><p id="preview-mode">离线界面预览：可查看布局与已保存的故事；实际生成需要模型连接。</p><div id="preview-messages"></div><p id="preview-result" role="status" aria-live="polite">聊天保持 2 条；生成结果留在剧场的演出记录中。</p></main>
     <script>
+        const livePreview = new URLSearchParams(location.search).get('model') === 'deepseek';
+        if (livePreview) document.getElementById('preview-mode').textContent = 'DeepSeek 实测：使用虚构预览角色与聊天，生成内容保存在此浏览器，不写入真实酒馆。';
         let previewSettings = {};
         try { previewSettings = JSON.parse(localStorage.getItem('mit-preview-settings') || '{}') || {}; } catch { /* use fresh preview settings */ }
         const previewChat = JSON.parse(localStorage.getItem('mit-preview-chat') || 'null') || [
@@ -80,10 +82,20 @@
                     saveSettingsDebounced() { localStorage.setItem('mit-preview-settings', JSON.stringify(previewSettings)); },
                     getCharacterCardFields() { return { description: '用于界面预览的角色。', personality: '沉稳', persona: '预览用户', scenario: '当前主线', system: '保持角色一致。', charDepthPrompt: '按人物动机行动。', jailbreak: '', creatorNotes: '预览用创作者备注。', version: 'preview', mesExamples: '' }; },
                     substituteParams(text) { return text.replaceAll('{{char}}', '当前角色').replaceAll('{{user}}', '预览用户'); },
-                    async generateRaw({ prompt }) {
-                        const contextTurns = prompt.slice(0, -1).length;
+                    async generateRaw({ prompt, systemPrompt }) {
+                        const contextTurns = prompt.slice(0, -2).length;
                         document.getElementById('preview-result').textContent = `已读取 ${contextTurns} 条上下文 · 聊天仍为 ${previewChat.length} 条 · 未发送`;
-                        return `<!doctype html><html lang="zh-CN"><head><style>body{background:#fffaf0;color:#43503f}main{max-width:650px;margin:auto}.kicker{letter-spacing:.2em;color:#718362;font-size:12px}h1{font:30px Georgia,serif;margin:10px 0 20px}blockquote{margin:22px 0;padding:16px 20px;border-left:3px solid #b4c2a0;background:#f0f1df;border-radius:0 12px 12px 0}summary{cursor:pointer;color:#60734f}</style></head><body><main><span class="kicker">无名剧场 · 本地示例</span><h1>今夜，故事为你留了一页</h1><p>帷幕缓缓升起，刚才的谈话仿佛还停在耳边。台灯亮了，桌上多出一本写着我们名字的剧本。</p><blockquote>“这次，换你来决定第一句台词。”他把剧本推到你面前，眼中带着一点笑意。</blockquote><details><summary>翻开剧本里的小纸条</summary><p>纸条背面，是两人当年没有说完的约定。他们相视而笑，把误会一页页讲清。天亮时，剧本已写到最后：两人一起关上剧院的灯，沿着熟悉的小路回家。这一次，谁也没有失约。</p></details><p class="kicker">读取上下文 ${contextTurns} 条 · 聊天未发送</p></main></body></html>`;
+                        if (livePreview) {
+                            const response = await nativeFetch('/api/preview/generate', {
+                                method: 'POST', headers: {'Content-Type':'application/json'},
+                                body: JSON.stringify({prompt, systemPrompt}),
+                            });
+                            const result = await response.json();
+                            if (!response.ok) throw new Error(result.error || 'DeepSeek 请求失败');
+                            document.getElementById('preview-result').textContent = `DeepSeek 真实生成 · ${result.model} · 输入 ${result.usage.prompt_tokens} / 输出 ${result.usage.completion_tokens} tokens · 聊天未发送`;
+                            return result.html;
+                        }
+                        throw new Error('当前是离线界面预览。请在酒馆配置模型后创作，或打开已连接模型的本地测试页。');
                     },
                     addOneMessage() { renderPreviewChat(); },
                     getRequestHeaders() { return {'Content-Type':'application/json'}; },
@@ -92,7 +104,7 @@
             },
         };
     </script>
-    <script type="module" src="./index.js?rev=workbench-v060"></script>
+    <script type="module" src="./index.js?rev=0.6.1-d0-reading"></script>
     <script>
         const previewView = new URLSearchParams(location.search).get('view');
         if (previewView) {
