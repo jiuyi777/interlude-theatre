@@ -254,8 +254,10 @@ const DEFAULT_SETTINGS = {
     libraryLayoutMigrated: false,
     coverLibraryVersion: COVER_LIBRARY_VERSION,
     protagonist: '',
-    mode: '沉浸叙事',
+    castMode: 'user',
+    mode: 'follow-source',
     directorNote: '',
+    settingEntries: [],
     continueContext: true,
     beautificationEnabled: true,
     beautificationMode: 'static',
@@ -279,6 +281,8 @@ let theatrePage = 'lobby';
 let readerOpen = false;
 let readerReturnView = 'history';
 let workspaceFavorites = false;
+let workspaceTrash = false;
+let recordChangeInFlight = false;
 let sendTarget = null;
 let sessionSaveTimer;
 let sessionMutation = 0;
@@ -288,18 +292,60 @@ function newId() {
     return globalThis.crypto?.randomUUID?.() || `work-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+const STORY_STYLES = [
+    ['follow-source', '按剧目和世界书原设定写', '根据所选剧目、世界书和本篇要求确定叙述方式。'],
+    ['沉浸叙事', '细写场景与心理', '着重具体场景、感官细节与人物心理，保持连续叙事。'],
+    ['轻喜互动', '轻松一点', '采用自然轻松的对话与适度幽默，人物言行保持原设定。'],
+    ['悬疑调查', '悬疑一点', '围绕线索、调查和逐步揭示组织情节，在结尾交代谜底。'],
+    ['情感慢燃', '慢慢发展感情', '通过细节、行动与对话逐步推进关系，让情感变化有铺垫。'],
+    ['高速冲突', '快节奏推进', '紧凑推进冲突与行动，减少重复铺垫，交代事件的因果与结局。'],
+    ['舞台剧腔调', '对白为主', '以清楚标注说话者的对白为主，配合简洁的动作与场景描述。'],
+];
+
+function styleOptions(value = 'follow-source') {
+    return STORY_STYLES.map(([id, label]) => `<option value="${id}" ${value === id ? 'selected' : ''}>${label}</option>`).join('');
+}
+
+function storyCast(context, options = {}) {
+    const mode = options.castMode || (options.protagonist ? 'custom' : 'user');
+    const name = mode === 'custom' ? String(options.protagonist || '').trim()
+        : mode === 'character' ? context?.name2 || '{{char}}' : context?.name1 || '{{user}}';
+    return { mode, name, instruction: mode === 'custom'
+        ? `以「${name}」为主角，依据角色卡、世界书与本篇要求安排出场人物，User 按剧情需要出场。`
+        : `以「${name}」为主角，结合 User「${context?.name1 || '{{user}}'}」与当前角色「${context?.name2 || '{{char}}'}」的资料和关系展开。` };
+}
+
+function castFields(options) {
+    const context = getContext();
+    const cast = storyCast(context, options);
+    return `<label>故事主角<select name="castMode"><option value="user" ${cast.mode === 'user' ? 'selected' : ''}>我（${escapeHtml(context?.name1 || '我')}）</option><option value="character" ${cast.mode === 'character' ? 'selected' : ''}>${escapeHtml(context?.name2 || '请先打开角色聊天')}</option><option value="custom" ${cast.mode === 'custom' ? 'selected' : ''}>指定其他人物</option></select></label><label class="mit-custom-cast" ${cast.mode !== 'custom' ? 'hidden' : ''}>其他人物的名字<input name="protagonist" value="${escapeHtml(options.protagonist || '')}" placeholder="填写角色卡或世界书中的人物"></label>`;
+}
+
 function newSession(play = selectedPlay()) {
     return {
         id: '__session__', work: null, chapter: 0, editing: false, dirty: false, started: false,
         form: { playId: play?.id || '', title: play?.title || '我的小剧场', requirements: play?.description || '',
-            note: settings.directorNote || '', mode: settings.mode, continueContext: settings.continueContext,
+            note: '', settingEntriesVersion: 1, mode: settings.mode, castMode: settings.castMode, protagonist: settings.protagonist || '', continueContext: settings.continueContext,
             beautification: settings.beautificationEnabled ? settings.beautificationMode : 'off' },
         sequel: '',
     };
 }
 
+function migrateStoryForm(form = {}) {
+    const migrated = { ...form };
+    if (!migrated.settingEntriesVersion && settings.legacyDirectorNote && migrated.note === settings.legacyDirectorNote) migrated.note = '';
+    migrated.settingEntriesVersion = 1;
+    return migrated;
+}
+
 function normalizeWork(entry) {
+    const form = migrateStoryForm(entry.form);
+    if (!form.castMode) {
+        form.protagonist = entry.protagonist || form.protagonist || '';
+        form.castMode = form.protagonist ? 'custom' : 'character';
+    }
     return { ...entry, id: entry.id || newId(), revision: entry.revision || 1, favorite: Boolean(entry.favorite),
+        form,
         writes: entry.writes || [], chapters: entry.chapters || (entry.html ? [{ title: '第一篇', html: entry.html }] : []) };
 }
 
@@ -317,6 +363,8 @@ async function ensureWorks() {
         works = (await workStore.list()).map(normalizeWork);
         session = await workStore.get('__session__') || newSession();
         if (session.work) session.work = normalizeWork(session.work);
+        session.form = { ...newSession(null).form, ...session.work?.form, ...migrateStoryForm(session.form) };
+        if (session.work && (await workStore.get(session.work.id))?.deletedAt) session = newSession();
         storageMessage = session.dirty ? '编辑草稿已恢复，记得保存作品' : session.work ? '已恢复本机保存的作品' : '';
         saveSettings();
     })().catch(error => {
@@ -379,6 +427,8 @@ function captureWorkspace() {
         session.form.requirements = form.elements.requirements.value;
         session.form.note = form.elements.note.value;
         session.form.mode = form.elements.mode.value;
+        session.form.castMode = form.elements.castMode.value;
+        session.form.protagonist = form.elements.protagonist.value.trim();
         session.form.continueContext = form.elements.continueContext.checked;
         session.form.beautification = form.elements.beautification.value;
     }
@@ -454,7 +504,7 @@ function showWorkspace() {
 
 function showLobby() {
     theatrePage = 'lobby';
-    const recent = currentWork() || works[0];
+    const recent = currentWork() || works.find(item => !item.deletedAt);
     const busy = generationInFlight || writeInFlight ? 'disabled' : '';
     showSheet('lobby', '剧场大厅', `
         <p class="mit-page-intro">今天，想和 ${escapeHtml(getContext()?.name2 || '角色')} 经历怎样的故事？</p>
@@ -478,10 +528,12 @@ function showComposer() {
         <form id="mit-work-form" class="mit-work-form"><fieldset ${disabled}>
             <label>故事叫什么<input name="title" maxlength="120" value="${escapeHtml(form.title)}" aria-label="故事标题"></label>
             <label>你希望发生什么<textarea name="requirements" rows="4" maxlength="6000" placeholder="例如：雨夜重逢，把当年的误会说开，最后一起回家。">${escapeHtml(form.requirements)}</textarea></label>
+            ${castFields(form)}
             <label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${form.continueContext ? 'checked' : ''}>发送全部聊天上下文</label>
             <p class="mit-context-help">角色与用户设定、启用的预设和世界书会完整提供。勾选后再附上全部主聊天；续写包含所有前篇。</p>
             <details class="mit-work-advanced"><summary>调整写法与排版</summary>
-                <label>故事风格<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode => `<option ${form.mode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+                <label>叙述方式（可选）<select name="mode">${styleOptions(form.mode)}</select></label>
+                <p class="mit-context-help">默认跟随剧目和世界书。其他选项只补充写法，人物身份仍来自原设定。</p>
                 <label>阅读排版<select name="beautification"><option value="off" ${form.beautification === 'off' ? 'selected' : ''}>简洁文字</option><option value="static" ${form.beautification === 'static' ? 'selected' : ''}>插页排版</option><option value="dynamic" ${form.beautification === 'dynamic' ? 'selected' : ''}>动态排版</option></select></label>
                 <label>还有什么要求<textarea name="note" rows="2" maxlength="1000">${escapeHtml(form.note)}</textarea></label>
             </details>
@@ -494,27 +546,87 @@ function showComposer() {
 
 function showWorks() {
     theatrePage = 'history';
-    const entries = works.filter(item => !workspaceFavorites || item.favorite).sort((a,b) => (b.updatedAt || b.startedAt || '').localeCompare(a.updatedAt || a.startedAt || ''));
+    const entries = works.filter(item => workspaceTrash ? item.deletedAt : !item.deletedAt && (!workspaceFavorites || item.favorite)).sort((a,b) => (b.updatedAt || b.startedAt || '').localeCompare(a.updatedAt || a.startedAt || ''));
     const disabled = generationInFlight || writeInFlight ? 'disabled' : '';
     showSheet('history', '演出记录', `
-        <p class="mit-page-intro">写完的故事都在这里。点开一篇，慢慢读。</p>
-        <div class="mit-work-tools"><button data-action="work-filter" aria-pressed="${workspaceFavorites}">${workspaceFavorites ? '查看全部故事' : '只看收藏'}</button><span>${entries.length} 部故事</span></div>
-        <div class="mit-records-list">${entries.map(item => `<button class="mit-work-row" data-action="open-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}><span><strong>${item.favorite ? '★ ' : ''}${escapeHtml(item.title)}</strong><small>${item.chapters.length} 篇 · ${escapeHtml(item.protagonist || '当前角色')}</small></span><b>打开阅读 →</b></button>`).join('') || '<p class="mit-page-note">这里还没有故事。去剧场大厅开始第一篇吧。</p>'}</div>
+        <p class="mit-page-intro">${workspaceTrash ? '删除的故事放在这里，可以恢复。' : '读过的故事留在这里，喜欢的就收藏起来。'}</p>
+        <div class="mit-record-filters" aria-label="故事筛选"><button data-action="work-filter" data-filter="all" aria-pressed="${!workspaceFavorites && !workspaceTrash}">全部故事</button><button data-action="work-filter" data-filter="favorites" aria-pressed="${workspaceFavorites && !workspaceTrash}">我的收藏</button><button data-action="work-filter" data-filter="trash" aria-pressed="${workspaceTrash}">回收站</button></div>
+        <p class="mit-record-count">${entries.length} 部故事</p>
+        <div class="mit-records-list">${entries.map(item => `<article class="mit-record-card">${workspaceTrash
+            ? `<div class="mit-work-row"><span><strong>${escapeHtml(item.title)}</strong><small>${item.chapters.length} 篇</small></span></div><div class="mit-record-actions"><button data-action="restore-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}>恢复故事</button></div>`
+            : `<button class="mit-work-row" data-action="open-work" data-entry-id="${escapeHtml(item.id)}" ${disabled}><span><strong>${escapeHtml(item.title)}</strong><small>${item.chapters.length} 篇 · 主角：${escapeHtml(item.protagonist || '原故事人物')}</small></span><b>阅读 →</b></button><div class="mit-record-actions"><button data-action="favorite-record" data-entry-id="${escapeHtml(item.id)}" aria-pressed="${item.favorite}" aria-label="${item.favorite ? '取消收藏' : '收藏'}《${escapeHtml(item.title)}》" ${disabled}>${item.favorite ? '★ 已收藏' : '☆ 收藏'}</button><button class="mit-delete-work" data-action="delete-work" data-entry-id="${escapeHtml(item.id)}" aria-label="删除《${escapeHtml(item.title)}》" ${disabled}>删除</button></div>`}</article>`).join('') || `<p class="mit-page-note">${workspaceTrash ? '回收站是空的。' : workspaceFavorites ? '还没有收藏故事。在全部故事里点「收藏」，以后就能在这里找到。' : '这里还没有故事。去剧场大厅开始第一篇吧。'}</p>`}</div>
         <details class="mit-archive-tools"><summary>备份与恢复</summary><p>故事保存在这个浏览器里。换设备前，先导出备份。</p><div class="mit-work-tools"><button data-action="backup-works">导出全部故事</button><label class="mit-file-button">导入故事备份<input id="mit-work-import" type="file" accept=".json,application/json"></label></div></details>
     `, 'mit-workspace-sheet mit-records-sheet');
+}
+
+async function changeSavedWork(action, id) {
+    if (recordChangeInFlight || generationInFlight || writeInFlight) return false;
+    recordChangeInFlight = true;
+    try {
+        await sessionWrites;
+        if (currentWork()?.id === id && !await saveCurrentWork()) return false;
+        const existing = works.find(item => item.id === id);
+        if (!existing) return false;
+        const updated = clone(existing);
+        if (action === 'delete-work') updated.deletedAt = new Date().toISOString();
+        else if (action === 'restore-work') delete updated.deletedAt;
+        else updated.favorite = !updated.favorite;
+        await workStore.put(updated);
+        works = works.map(item => item.id === id ? updated : item);
+        if (currentWork()?.id === id) {
+            if (updated.deletedAt) { session = newSession(); readerOpen = false; theatrePage = 'history'; }
+            else session.work.favorite = updated.favorite;
+        }
+        await queueSessionSave();
+        showWorkspace();
+        toast(action === 'delete-work' ? '已移入回收站，可以恢复' : action === 'restore-work' ? '已恢复到全部故事' : updated.favorite ? '已收藏，在「演出记录 → 我的收藏」查看' : '已取消收藏', 'success');
+        return true;
+    } catch (error) { toast(`保存失败：${error.message}，原记录保留`, 'error'); return false; }
+    finally { recordChangeInFlight = false; }
+}
+
+function settingEntriesMarkup() {
+    return settings.settingEntries.map(entry => `<details class="mit-setting-entry" data-entry-id="${escapeHtml(entry.id)}">
+        <summary><input aria-label="发送这条设定" type="checkbox" data-setting-field="enabled" ${entry.enabled ? 'checked' : ''}><span class="mit-setting-title">${escapeHtml(entry.name || '未命名条目')}</span><span class="mit-setting-state">${entry.enabled ? '已开启' : '已关闭'}</span></summary>
+        <label>条目名称<input data-setting-field="name" value="${escapeHtml(entry.name)}" placeholder="例如：人物关系、写作要求"></label>
+        <label>条目内容<textarea data-setting-field="content" rows="5" placeholder="填写希望每次发送的设定或要求">${escapeHtml(entry.content)}</textarea></label>
+        <button type="button" data-action="delete-setting-entry">删除条目</button>
+    </details>`).join('') || '<p class="mit-context-help">还没有条目。把经常用的设定写在这里，下次就不用重复填写。</p>';
+}
+
+function updateSettingEntry(target) {
+    const row = target.closest('[data-entry-id]');
+    const entry = settings.settingEntries.find(item => item.id === row?.dataset.entryId);
+    if (!entry) return;
+    const field = target.dataset.settingField;
+    if (!['name', 'content', 'enabled'].includes(field)) return;
+    entry[field] = field === 'enabled' ? target.checked : target.value;
+    row.querySelector('.mit-setting-title').textContent = entry.name || '未命名条目';
+    row.querySelector('.mit-setting-state').textContent = entry.enabled ? '已开启' : '已关闭';
+    saveSettings();
 }
 
 function showDirector() {
     theatrePage = 'director';
     showSheet('director', '导演室', `
-        <p class="mit-page-intro">设置新故事的默认写法。开始创作时，仍然可以单独调整。</p>
+        <p class="mit-page-intro">选好故事主角，再管理每次发送的常驻设定。</p>
+        <p class="mit-context-help mit-source-summary">人物和背景沿用酒馆中的角色卡、你的设定和关联世界书。</p>
         <form id="mit-director-form" class="mit-director-form">
-            <label>主角名称<input name="protagonist" value="${escapeHtml(settings.protagonist || '')}" placeholder="留空，使用当前聊天的角色"></label>
-            <label>故事风格<select name="mode">${['沉浸叙事','轻喜互动','悬疑调查','情感慢燃','高速冲突','舞台剧腔调'].map(mode => `<option ${settings.mode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
-            <label>默认写作要求<textarea name="directorNote" rows="3" maxlength="1000">${escapeHtml(settings.directorNote || '')}</textarea></label>
+            ${castFields(settings)}
+            <section class="mit-setting-book" aria-label="常驻设定">
+                <h3>常驻设定</h3>
+                <p class="mit-context-help">像世界书一样分条保存。开启的条目每次都会发送，关闭的只保留；新故事、另写和续写都适用。修改后自动保存。</p>
+                <div id="mit-setting-entries">${settingEntriesMarkup()}</div>
+                <button type="button" data-action="add-setting-entry">＋ 添加条目</button>
+                <p class="mit-context-help">这里保存剧场专用设定；角色卡关联的世界书仍照常读取。</p>
+            </section>
+            <details class="mit-work-advanced"><summary>叙述方式与阅读排版</summary>
+            <label>叙述方式（可选）<select name="mode">${styleOptions(settings.mode)}</select></label>
+            <p class="mit-context-help">默认跟随剧目和世界书。也可以额外要求轻松一点、悬疑一点或对白为主。</p>
             <label class="mit-checkbox-row"><input name="continueContext" type="checkbox" ${settings.continueContext ? 'checked' : ''}>发送全部聊天上下文</label>
             <label class="mit-checkbox-row"><input name="beautificationEnabled" type="checkbox" ${settings.beautificationEnabled ? 'checked' : ''}>为故事添加阅读排版</label>
             <label>排版方式<select name="beautificationMode"><option value="static" ${settings.beautificationMode !== 'dynamic' ? 'selected' : ''}>静态插页</option><option value="dynamic" ${settings.beautificationMode === 'dynamic' ? 'selected' : ''}>动态插页</option></select></label>
+            </details>
             <button class="mit-primary" type="submit">保存默认设置</button>
         </form>
     `, 'mit-workspace-sheet mit-director-sheet');
@@ -580,7 +692,7 @@ async function writeCurrentWork() {
         if (prior) return toast('这个版本已经写入此聊天', 'info');
         let message = context.chat.find(matches);
         if (!message) {
-            message = { name: work.protagonist || context.name2, is_user: false, is_system: false,
+            message = { name: context.name2, is_user: false, is_system: false,
                 send_date: new Date().toISOString(), mes: `[无名剧场 · ${work.title}]\n\n${workText(work).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}`,
                 extra: { [THEATRE_MESSAGE_KEY]: { workId: work.id, revision: work.revision } } };
             context.chat.push(message);
@@ -604,9 +716,14 @@ async function writeCurrentWork() {
 }
 
 async function handleWorkspaceAction(action, target) {
-    const actions = ['choose-play','return-work','new-work','back-lobby','close-reader','rewrite-work','open-work','work-filter','save-work','edit-work','favorite-work','sequel-work','generate-sequel','download-work','write-work','backup-works'];
+    const actions = ['choose-play','return-work','new-work','back-lobby','close-reader','rewrite-work','open-work','work-filter','save-work','edit-work','favorite-work','favorite-record','delete-work','restore-work','sequel-work','generate-sequel','download-work','write-work','backup-works'];
     if (!actions.includes(action)) return false;
+    if (recordChangeInFlight) return true;
     captureWorkspace();
+    if (['favorite-work','favorite-record','delete-work','restore-work'].includes(action)) {
+        await changeSavedWork(action, target.dataset.entryId || currentWork()?.id);
+        return true;
+    }
     if ((generationInFlight || writeInFlight) && !['back-lobby','close-reader','work-filter','download-work','backup-works'].includes(action)) return true;
     if (action === 'close-reader') { await closeReader(); return true; }
     if (action === 'choose-play') { setView('library'); return true; }
@@ -616,10 +733,13 @@ async function handleWorkspaceAction(action, target) {
         if (currentWork() && !await saveCurrentWork()) return true;
         session = newSession(null); session.started = true; session.form.title = ''; session.form.requirements = ''; theatrePage = 'compose'; readerOpen = false;
     }
-    if (action === 'work-filter') workspaceFavorites = !workspaceFavorites;
+    if (action === 'work-filter') {
+        workspaceFavorites = target.dataset.filter === 'favorites';
+        workspaceTrash = target.dataset.filter === 'trash';
+    }
     if (action === 'open-work') {
         if (currentWork() && !await saveCurrentWork()) return true;
-        const work = works.find(item => item.id === target.dataset.entryId);
+        const work = works.find(item => item.id === target.dataset.entryId && !item.deletedAt);
         if (work) {
             const lastChapter = currentWork()?.id === work.id ? session.chapter : 0;
             readerReturnView = theatrePage === 'lobby' ? 'lobby' : 'history';
@@ -632,7 +752,6 @@ async function handleWorkspaceAction(action, target) {
         if (session.editing && !await saveCurrentWork()) return true;
         session.editing = !session.editing;
     }
-    if (action === 'favorite-work' && currentWork()) { currentWork().favorite = !currentWork().favorite; await saveCurrentWork(); }
     if (action === 'sequel-work') session.sequelOpen = !session.sequelOpen;
     if (action === 'generate-sequel') { await runWorkspace(true); return true; }
     if (action === 'write-work') { await writeCurrentWork(); return true; }
@@ -708,7 +827,7 @@ function normalizePlay(raw, index = 0) {
         mode: String(raw.mode || '自定义剧目').slice(0, 24),
         description: String(raw.description || '从剧目簿导入的小剧场。').slice(0, 180),
         acts: (Array.isArray(raw.acts) ? raw.acts : ['开幕', '转折', '谢幕']).slice(0, 3).map((item) => String(item).slice(0, 18)),
-        prompt: prompt.slice(0, 12000),
+        prompt,
         tags: (Array.isArray(raw.tags) ? raw.tags : []).slice(0, 8).map((item) => String(item).slice(0, 18)),
         cover: typeof raw.cover === 'string' ? raw.cover : '',
         coverCrop: typeof raw.coverCrop === 'string' ? raw.coverCrop : '',
@@ -730,6 +849,7 @@ function normalizePlay(raw, index = 0) {
         usageCount: Number.isFinite(Number(raw.usageCount)) ? Math.max(0, Number(raw.usageCount)) : 0,
         usedBy: raw.usedBy && typeof raw.usedBy === 'object' && !Array.isArray(raw.usedBy) ? { ...raw.usedBy } : {},
         builtin: false,
+        importSelected: raw.importSelected !== false,
     };
 }
 
@@ -750,15 +870,17 @@ function extractRawPlays(parsed, file) {
     if (Array.isArray(parsed)) return parsed.map((item) => ({ ...item, author: item?.author || author }));
     if (Array.isArray(parsed?.scripts)) return parsed.scripts.map((item) => ({ ...item, author: item?.author || author }));
     if (parsed?.entries && typeof parsed.entries === 'object') {
+        const bookId = String(file?.name || parsed.name || 'worldbook');
         return Object.values(parsed.entries)
             .filter((entry) => entry && typeof entry === 'object' && String(entry.content || '').trim())
             .map((entry) => ({
-                id: `worldbook-${entry.uid ?? crypto.randomUUID()}`,
+                id: `worldbook-${encodeURIComponent(bookId)}-${entry.uid ?? newId()}`,
                 sourceId: entry.uid ?? '',
                 title: entry.comment || `未命名剧目 ${entry.uid ?? ''}`,
                 prompt: entry.content,
                 mode: '世界书小剧场',
-                description: '从 SillyTavern 世界书剧目簿导入。',
+                description: String(entry.content).replace(/\s+/g, ' ').slice(0, 160),
+                importSelected: entry.disable !== true && entry.enabled !== false,
                 acts: ['开幕', '发展', '谢幕'],
                 tags: Array.isArray(entry.key) ? entry.key : [],
                 author,
@@ -783,6 +905,7 @@ function hydrateSettings() {
             library: Array.isArray(current.library) ? current.library : clone(BUNDLED_PLAYS),
             favoriteIds: Array.isArray(current.favoriteIds) ? current.favoriteIds : [],
             history: Array.isArray(current.history) ? current.history : [],
+            castMode: current.castMode || (current.protagonist ? 'custom' : 'user'),
         };
         hostSettings[SETTINGS_KEY] = settings;
         saveSettings = () => context.saveSettingsDebounced?.();
@@ -791,10 +914,23 @@ function hydrateSettings() {
         saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         try {
             const local = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
-            if (local) settings = { ...settings, ...local };
+            if (local) settings = { ...settings, ...local, castMode: local.castMode || (local.protagonist ? 'custom' : 'user') };
         } catch { /* keep defaults */ }
     }
 
+    settings.settingEntries = Array.isArray(settings.settingEntries) ? settings.settingEntries : [];
+    if (!settings.settingEntriesVersion) {
+        settings.legacyDirectorNote = settings.directorNote || '';
+        if (settings.legacyDirectorNote.trim()) settings.settingEntries.push({ id: newId(), name: '原来的默认要求', content: settings.legacyDirectorNote, enabled: true });
+        settings.directorNote = '';
+        settings.settingEntriesVersion = 1;
+        saveSettings();
+    }
+    if (!settings.directorPreferencesVersion) {
+        if (settings.mode === '沉浸叙事') settings.mode = 'follow-source';
+        settings.directorPreferencesVersion = 1;
+        saveSettings();
+    }
     let bundledLibraryChanged = false;
     for (const bundledPlay of BUNDLED_PLAYS) {
         const existingPlay = settings.library.find((play) => play.id === bundledPlay.id);
@@ -954,6 +1090,56 @@ function usedBySummary(play) {
     return names.length > 3 ? `${shown} 等 ${names.length} 人` : shown;
 }
 
+// Each SVG displays one source-art component. The full scene is never placed
+// behind the responsive controls; its navigation and paper cannot show twice.
+function hallFragment(rect, className = '', transform = '', fit = 'xMidYMid meet') {
+    return `<svg class="${className}" viewBox="${rect.join(' ')}" preserveAspectRatio="${fit}" aria-hidden="true" focusable="false"${transform ? ` style="transform:${transform}"` : ''}><image href="${HALL_IMAGE_URLS.lobby}" width="1536" height="1024"/></svg>`;
+}
+
+function hallRepeat(rect, id, scale, transform = '') {
+    const width = rect[2] * scale, height = rect[3] * scale;
+    return `<svg class="mit-art-tile" aria-hidden="true" focusable="false"${transform ? ` style="transform:${transform}"` : ''}><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="${width}" height="${height}"><svg width="${width}" height="${height}" viewBox="${rect.join(' ')}" preserveAspectRatio="xMidYMid meet"><image href="${HALL_IMAGE_URLS.lobby}" width="1536" height="1024"/></svg></pattern></defs><rect width="100%" height="100%" fill="url(#${id})"/></svg>`;
+}
+
+function hallFrame(kind) {
+    const frames = {
+        paper: [
+            [377,834,128,128], [600,834,128,128], [1389,834,128,128],
+            [377,360,128,128], [550,300,750,500], [1389,360,128,128],
+            [377,834,128,128], [600,834,128,128], [1389,834,128,128],
+        ],
+        binding: [
+            [4,181,58,36], [62,181,266,36], [328,181,28,36],
+            [4,300,58,166], [177,352,132,35], [328,352,28,35],
+            [4,879,58,92], [62,879,266,92], [328,879,28,92],
+        ],
+        'binding-mobile': [
+            [328,181,28,36], [140,181,140,36], [328,181,28,36],
+            [328,352,28,35], [177,352,132,35], [328,352,28,35],
+            [328,181,28,36], [140,181,140,36], [328,181,28,36],
+        ],
+        ticket: [
+            [70,218,32,32], [180,218,48,32], [305,218,32,32],
+            [70,258,18,24], [175,236,135,20], [319,258,18,24],
+            [70,314,32,32], [180,314,48,32], [305,314,32,32],
+        ],
+    };
+    const scale = { paper: 44 / 128, binding: .6, 'binding-mobile': .5, ticket: .6 }[kind];
+    const id = `mit-art-${kind}-${newId()}`;
+    return `<span class="mit-art-frame mit-art-frame-${kind}" aria-hidden="true">${frames[kind].map((rect, i) => {
+        const transform = kind === 'paper' && i < 3 ? 'scaleY(-1)' : kind === 'binding-mobile'
+            ? `${i % 3 === 0 ? 'scaleX(-1)' : ''} ${i > 5 ? 'scaleY(-1)' : ''}`.trim() : '';
+        if (i === 4) return hallFragment(rect, 'mit-art-tile', '', 'none');
+        if ([1,3,5,7].includes(i)) return hallRepeat(rect, `${id}-${i}`, scale, transform);
+        return hallFragment(rect, 'mit-art-tile', transform);
+    }).join('')}</span>`;
+}
+
+function hallNavigation() {
+    return [['lobby','剧场大厅',[88,239,66,84]], ['library','剧目库',[87,420,70,86]], ['history','演出记录',[85,589,75,88]], ['director','导演室',[88,770,70,83]]]
+        .map(([view, label, icon]) => `<button class="mit-nav mit-nav-${view}" type="button" data-view="${view}" aria-label="${label}">${hallFrame('ticket')}${hallFragment(icon, 'mit-nav-icon')}<span class="mit-nav-label">${label}</span><span class="mit-current-mark" aria-hidden="true">✦</span></button>`).join('');
+}
+
 function createRoot() {
     const root = document.createElement('div');
     root.id = ROOT_ID;
@@ -961,21 +1147,22 @@ function createRoot() {
     root.innerHTML = `
         <div class="mit-backdrop" data-action="close"></div>
         <section class="mit-theatre" role="dialog" aria-modal="true" aria-label="无名剧场">
+            <header class="mit-masthead">
+                <svg class="mit-header-art" viewBox="0 0 1536 224" role="img" aria-label="无名剧场纸雕招牌与幕布">
+                    <defs><clipPath id="mit-header-silhouette"><path d="M0 0H1536V176H1100L1090 199L1060 214H830L790 223L762 221L740 213H473L441 201L426 176H0Z"/></clipPath></defs>
+                    <image href="${HALL_IMAGE_URLS.lobby}" width="1536" height="1024" clip-path="url(#mit-header-silhouette)"/>
+                </svg>
+            </header>
             <div class="mit-stage">
-                <img class="mit-hall-art" src="${HALL_IMAGE_URLS.lobby}" alt="奶油色童话纸雕剧场大厅，左侧鼠尾草绿导航与横向展开的长节目单纸页">
-                <button class="mit-close" type="button" data-action="close" aria-label="关闭无名剧场">×</button>
-                <nav class="mit-navigation" aria-label="剧场主导航">
-                    <button class="mit-nav mit-nav-lobby" type="button" data-view="lobby" aria-label="剧场大厅"><span>剧场大厅</span></button>
-                    <button class="mit-nav mit-nav-library" type="button" data-view="library" aria-label="剧目库"><span>剧目库</span></button>
-                    <button class="mit-nav mit-nav-history" type="button" data-view="history" aria-label="演出记录"><span>演出记录</span></button>
-                    <button class="mit-nav mit-nav-director" type="button" data-view="director" aria-label="导演室"><span>导演室</span></button>
-                </nav>
+                <nav class="mit-navigation" aria-label="剧场主导航">${hallFrame('binding')}${hallFrame('binding-mobile')}<div class="mit-navigation-items">${hallNavigation()}</div></nav>
                 <div class="mit-sheet-host" aria-live="polite"></div>
             </div>
+            <button class="mit-close" type="button" data-action="close" aria-label="关闭无名剧场">×</button>
         </section>
         <section class="mit-reader" role="dialog" aria-modal="true" aria-label="故事阅读"></section>
         <div class="mit-toast" role="status"></div>`;
     document.body.append(root);
+    document.documentElement.classList.add('mit-active');
     Object.values(HALL_IMAGE_URLS).forEach((url) => {
         const image = new Image();
         image.src = url;
@@ -1014,6 +1201,7 @@ function closeTheatre() {
     root.classList.remove('is-open');
     closeTimer = setTimeout(() => {
         root.remove();
+        document.documentElement.classList.remove('mit-active');
         if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
     }, 180);
 }
@@ -1028,8 +1216,6 @@ function setCurrentView(view) {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
     root.dataset.view = view;
-    const hallArt = root.querySelector('.mit-hall-art');
-    if (hallArt && HALL_IMAGE_URLS[view]) hallArt.src = HALL_IMAGE_URLS[view];
     root.querySelectorAll('[data-view]').forEach((button) => {
         const isCurrent = button.dataset.view === view;
         button.classList.toggle('is-current', isCurrent);
@@ -1053,12 +1239,15 @@ function showSheet(view, title, body, className = '') {
     document.getElementById(ROOT_ID)?.classList.add('has-sheet');
     const host = document.querySelector(`#${ROOT_ID} .mit-sheet-host`);
     if (!host) return;
+    const pageChanged = host.querySelector('.mit-sheet')?.getAttribute('aria-label') !== title;
     setCurrentView(view);
     host.innerHTML = `
         <section class="mit-sheet ${className}" aria-label="${escapeHtml(title)}">
+            ${hallFrame('paper')}
             <header><h2>${escapeHtml(title)}</h2></header>
             <div class="mit-sheet-body" tabindex="0">${body}</div>
         </section>`;
+    if (pageChanged) document.getElementById(ROOT_ID).scrollTop = 0;
     const heading = host.querySelector('h2');
     if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
 }
@@ -1086,7 +1275,7 @@ function showLibrary() {
     showSheet('library', '剧目库', `
         <div class="mit-library-toolbar">
             <div><strong>${settings.library.length}</strong> 个剧目 · <strong>${settings.favoriteIds.length}</strong> 个收藏</div>
-            <div class="mit-library-tools"><input id="mit-library-search" type="search" placeholder="搜剧名或 @作者"><label class="mit-import-button">导入剧目簿<input id="mit-import-file" type="file" accept="application/json,.json" multiple></label></div>
+            <div class="mit-library-tools"><input id="mit-library-search" type="search" placeholder="搜剧名或 @作者"><label class="mit-import-button">导入世界书 / 剧目<input id="mit-import-file" type="file" accept="application/json,.json" multiple></label></div>
         </div>
         <p class="mit-help">挑一个想演的故事，点「用这个剧目」，再补充你的要求。</p>
         <details class="mit-library-organize"><summary>筛选、排序与随机挑选</summary><div><select id="mit-library-filter" aria-label="剧目筛选"><option value="all" ${settings.lobbyFilter !== 'favorites' ? 'selected' : ''}>全部剧目</option><option value="favorites" ${settings.lobbyFilter === 'favorites' ? 'selected' : ''}>收藏的剧目</option></select><select id="mit-lobby-sort" aria-label="剧目排序"><option value="latest" ${settings.lobbySort !== 'most-used' ? 'selected' : ''}>最近加入</option><option value="most-used" ${settings.lobbySort === 'most-used' ? 'selected' : ''}>经常使用</option></select><button data-action="random">帮我挑一个</button></div></details>
@@ -1098,12 +1287,13 @@ function showLibrary() {
 }
 
 function buildOpeningCue(play, continueContext = settings.continueContext, context = getContext(), options = settings) {
-    const protagonist = settings.protagonist || context?.name2 || '{{char}}';
+    const cast = storyCast(context, options);
+    const writingStyle = STORY_STYLES.find(([id]) => id === options.mode)?.[2] || STORY_STYLES[0][2];
     const acts = play.acts?.length ? play.acts.join(' / ') : '开幕 / 转折 / 谢幕';
     const contextRule = continueContext
         ? '完整主聊天：结合所提供的全部主线记录中的人物关系、情绪与已知事件；本场新增事件属于独立番外。'
         : '独立番外：不延续最近主线事件，只保持角色设定、Persona 与既有人物关系一致。';
-    return `【本篇题目】${play.title}\n请按以下资料与要求完成故事。\n人物：${protagonist}\n叙事方式：${options.mode || play.mode}\n上下文方式：${contextRule}\n可参考的故事节奏（具体组织方式以剧目要求为准）：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n补充要求：${options.directorNote || '保持画面感与角色一致性。'}\n创作要求：从具体场景开始；逐项完成剧目要求，涉及天数或数量时按编号写全；涉及血量、金额、时间或触发阈值时核对各步算式，明确区分当前数值与距离目标的差额，确保每次变化、最终数值和结局条件一致；保持角色身份、关系与说话方式一致；依据角色卡、Persona 与已有关系描写双方的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；只呈现作品本身，本场内容不改变主线事实。`;
+    return `【本篇题目】${play.title}\n请按以下资料与要求完成故事。\n人物安排：${cast.instruction}\n叙事方式：${writingStyle}\n上下文方式：${contextRule}\n可参考的故事节奏（具体组织方式以剧目要求为准）：${acts}\n剧目设定：${play.prompt}\n用户编辑的剧目描述（具体情节以这份描述为准）：${play.description}\n补充要求：${options.directorNote || '保持画面感与角色一致性。'}\n创作要求：从具体场景开始；逐项完成剧目要求，涉及天数或数量时按编号写全；涉及血量、金额、时间或触发阈值时核对各步算式，明确区分当前数值与距离目标的差额，确保每次变化、最终数值和结局条件一致；保持角色身份、关系与说话方式一致；依据角色卡、世界书、Persona 与已有关系描写出场人物的行动、心理和台词；一次写完开端、发展、转折与明确结局，在本次输出中完成所有选择与事件收束；只呈现作品本身，本场内容不改变主线事实。`;
 }
 
 function filterMainChatMessages(chat) {
@@ -1154,7 +1344,7 @@ function buildCharacterSystemPrompt(context, continueContext = settings.continue
         sequel ? '本次由用户明确要求创作后续篇章。给定前篇是已完成的故事，保留其事实与结局，从结局之后展开并写完新篇章，仅输出新增内容。' : continueContext
             ? '只把提供的主聊天快照当作人物关系、说话习惯与主线背景；不要续写或引用任何历史小剧场。'
             : '本次不提供主聊天快照；只依据角色卡、Persona 与剧目要求演出独立番外。',
-        '本次任务是一次完成的独立故事：写出开端、发展、转折和明确结局；依据角色卡与 Persona 合理描写双方言行，并在故事内部完成选择。此完成方式优先于剧目、角色卡或聊天中要求等待用户回复、分轮互动的写作方式。严格保持人物一致性，本场新增事件仅属于番外。番外隔离、上下文来源和生成过程都是内部执行规则，不得作为免责声明、脚注或界面说明写入作品；作品只呈现故事本身。',
+        '本次任务是一次完成的独立故事：写出开端、发展、转折和明确结局；依据角色卡、世界书与 Persona 合理描写出场人物言行，并在故事内部完成选择。此完成方式优先于剧目、角色卡或聊天中要求等待用户回复、分轮互动的写作方式。严格保持人物一致性，本场新增事件仅属于番外。番外隔离、上下文来源和生成过程都是内部执行规则，不得作为免责声明、脚注或界面说明写入作品；作品只呈现故事本身。',
         ...sections,
     ].join('\n\n');
 }
@@ -1170,6 +1360,8 @@ function buildGenerationMessages(context, play, beautificationMode, continueCont
             content: `${speaker ? `${speaker}：` : ''}${String(message.mes || '')}`,
         };
     });
+    const entries = (options.settingEntries || []).filter(entry => entry.enabled && entry.content.trim());
+    if (entries.length) selected.push({ role: 'system', content: context.substituteParams('【常驻设定】\n' + entries.map(entry => `【${entry.name || '未命名条目'}】\n${entry.content}`).join('\n\n')) });
     selected.push({ role: 'user', content: cue });
     // generateRaw owns this ordered message list. D0 follows all context, the
     // creative request and any previous chapters, immediately before generation.
@@ -1201,7 +1393,7 @@ async function runWorkspace(sequel = false) {
     const original = playById(form.playId);
     return startPerformance({ ...original, id: original?.id || 'custom', title: form.title.trim() || '我的小剧场',
         description: form.requirements, prompt: original?.prompt || '根据用户要求创作。' }, form.beautification, form.continueContext,
-        { mode: form.mode, directorNote: form.note, form, previousWork: sequel ? clone(currentWork()) : null, sequel: session.sequel });
+        { mode: form.mode, castMode: form.castMode, protagonist: form.protagonist, directorNote: form.note, form, previousWork: sequel ? clone(currentWork()) : null, sequel: session.sequel });
 }
 
 async function startPerformance(play = selectedPlay(), beautificationMode = settings.beautificationEnabled ? settings.beautificationMode : 'off', continueContext = settings.continueContext, options = {}) {
@@ -1216,11 +1408,11 @@ async function startPerformance(play = selectedPlay(), beautificationMode = sett
     }
     if (!context.chatId) { generationInFlight = false; return toast('请先打开一个角色或群聊', 'error'); }
 
-    const protagonist = settings.protagonist || context?.name2 || '当前角色';
     const runId = newId();
     const startedAt = new Date().toISOString();
     const source = targetIdentity(context);
-    const run = { mode: settings.mode || play.mode, directorNote: settings.directorNote, ...clone(options) };
+    const run = { mode: settings.mode, castMode: settings.castMode, protagonist: settings.protagonist, directorNote: '', ...clone(options), settingEntries: clone(settings.settingEntries) };
+    const protagonist = storyCast(context, run).name;
     const previous = run.previousWork;
     if (previous) run.previousText = workText(previous);
     const frozenPlay = clone(play);
@@ -1228,6 +1420,7 @@ async function startPerformance(play = selectedPlay(), beautificationMode = sett
     toast(continueContext ? '正在读取主聊天并准备舞台…' : '正在准备独立番外舞台…');
 
     try {
+        if (!protagonist) throw new Error('请填写其他人物的名字');
         if (previous && (previous.source?.key ? previous.source.key !== source.key : previous.chatId !== context.chatId)) throw new Error('请切回这部作品的原聊天后续写，保持人物和背景一致');
         const systemPrompt = buildCharacterSystemPrompt(context, continueContext, Boolean(previous));
         const prompt = buildGenerationMessages(context, frozenPlay, beautificationMode, continueContext, run);
@@ -1254,7 +1447,7 @@ async function startPerformance(play = selectedPlay(), beautificationMode = sett
             protagonist,
             participants: currentParticipantNames(context),
             mode: run.mode,
-            form: run.form || { ...session.form, mode:run.mode, note:run.directorNote, title:frozenPlay.title, requirements:frozenPlay.description },
+            form: run.form || { ...session.form, mode:run.mode, castMode:run.castMode, protagonist:run.protagonist, note:run.directorNote, title:frozenPlay.title, requirements:frozenPlay.description },
             source,
             continueContext,
             beautificationMode,
@@ -1310,26 +1503,28 @@ function showImportPreview() {
     const macroButtonLabel = macroTarget === 'tavern'
         ? '一键替换为 {{char}}'
         : '一键切换为 char';
-    const rows = pendingImport.plays.map((play) => `
+    const selectedCount = pendingImport.plays.filter(play => play.importSelected).length;
+    const rows = pendingImport.plays.map((play, index) => `
         <article class="mit-import-preview-item">
-            <strong>${escapeHtml(play.title)}</strong>
+            <label class="mit-import-select"><input type="checkbox" data-import-index="${index}" ${play.importSelected ? 'checked' : ''}><strong>${escapeHtml(play.title)}</strong></label>
             <span>${escapeHtml(play.author)} · ${escapeHtml(play.mode)}</span>
             <p>${escapeHtml(play.description)}</p>
+            <details><summary>查看条目全文</summary><pre>${escapeHtml(play.prompt)}</pre></details>
         </article>`).join('');
     const warnings = pendingImport.errors.length
         ? `<div class="mit-import-warnings">${pendingImport.errors.map(escapeHtml).join('<br>')}</div>`
         : '';
     showSheet('library', '导入预览', `
-        <p class="mit-help">下面只是预览，目前尚未写入剧目库。宏切换会修改本次待导入内容，确认收录后才保存。</p>
-        <div class="mit-import-macro-tools">
+        <p class="mit-help">世界书 JSON 可以直接导入。勾选要作为剧目的条目，全文会保留；原世界书保持原样。普通人物与背景设定可以继续使用酒馆中已关联的世界书。</p>
+        <details class="mit-import-macro-tools"><summary>角色写法转换（可选）</summary>
             <div><strong>角色写法</strong><span>char：${macroCounts.plain} 个</span><span>{{char}}：${macroCounts.tavern} 个</span><span>{{user}} 保持不变</span></div>
             <button type="button" data-action="toggle-import-macros" data-target-style="${macroTarget}" ${macroCounts.plain + macroCounts.tavern ? '' : 'disabled'}>${macroCounts.plain + macroCounts.tavern ? macroButtonLabel : '未检测到角色写法'}</button>
-        </div>
+        </details>
         ${warnings}
         <div class="mit-import-preview-list">${rows}</div>
         <div class="mit-confirm-actions">
             <button type="button" data-action="cancel-import">取消</button>
-            <button class="mit-primary" type="button" data-action="confirm-import">确认收录 ${pendingImport.plays.length} 个剧目</button>
+            <button class="mit-primary" type="button" data-action="confirm-import" ${selectedCount ? '' : 'disabled'}>确认收录 ${selectedCount} 个剧目</button>
         </div>
     `, 'mit-import-preview-sheet');
 }
@@ -1349,7 +1544,7 @@ function commitPendingImport() {
     if (!pendingImport?.plays?.length) return showLibrary();
     const now = new Date().toISOString();
     let imported = 0;
-    for (const incoming of pendingImport.plays) {
+    for (const incoming of pendingImport.plays.filter(play => play.importSelected)) {
         const play = { ...incoming, updatedAt: now };
         const existingIndex = settings.library.findIndex((item) => item.id === play.id);
         if (existingIndex >= 0 && !settings.library[existingIndex].builtin) {
@@ -1457,11 +1652,38 @@ function bindRootEvents(root) {
             return;
         }
 
+        const entryAction = event.target.closest('[data-action]');
+        if (entryAction?.dataset.action === 'add-setting-entry') {
+            settings.settingEntries.push({ id: newId(), name: '', content: '', enabled: true });
+            saveSettings();
+            const list = root.querySelector('#mit-setting-entries');
+            list.innerHTML = settingEntriesMarkup();
+            list.lastElementChild.open = true;
+            list.lastElementChild.querySelector('input[data-setting-field="name"]').focus();
+            return;
+        }
+        if (entryAction?.dataset.action === 'delete-setting-entry') {
+            const row = entryAction.closest('[data-entry-id]');
+            if (!confirm('删除这条常驻设定？')) return;
+            settings.settingEntries = settings.settingEntries.filter(entry => entry.id !== row.dataset.entryId);
+            saveSettings(); root.querySelector('#mit-setting-entries').innerHTML = settingEntriesMarkup(); return;
+        }
         const actionTarget = event.target.closest('[data-action]');
         if (actionTarget) handleAction(actionTarget.dataset.action, actionTarget);
     });
 
     root.addEventListener('change', (event) => {
+        if (event.target.dataset.settingField) { updateSettingEntry(event.target); return; }
+        if (event.target.name === 'castMode') {
+            event.target.closest('form')?.querySelector('.mit-custom-cast')?.toggleAttribute('hidden', event.target.value !== 'custom');
+        }
+        if (event.target.matches('[data-import-index]') && pendingImport) {
+            const play = pendingImport.plays[Number(event.target.dataset.importIndex)];
+            if (play) play.importSelected = event.target.checked;
+            const count = pendingImport.plays.filter(item => item.importSelected).length;
+            const confirm = root.querySelector('[data-action="confirm-import"]');
+            if (confirm) { confirm.textContent = `确认收录 ${count} 个剧目`; confirm.disabled = count === 0; }
+        }
         if (event.target.id === 'mit-work-import') importWorks(event.target.files[0]);
         if (event.target.id === 'mit-work-chapter') {
             captureWorkspace(); session.chapter = Number(event.target.value); queueSessionSave(); showWorkspace();
@@ -1480,6 +1702,7 @@ function bindRootEvents(root) {
     });
 
     root.addEventListener('input', (event) => {
+        if (event.target.dataset.settingField) { updateSettingEntry(event.target); return; }
         if (event.target.closest('.mit-workspace-sheet, .mit-reader')) {
             captureWorkspace();
             storageMessage = '正在保存编辑草稿…'; updateWorkspaceStatus();
@@ -1497,9 +1720,12 @@ function bindRootEvents(root) {
         if (event.target.id !== 'mit-director-form') return;
         event.preventDefault();
         const data = new FormData(event.target);
-        settings.protagonist = String(data.get('protagonist') || '').trim();
-        settings.mode = String(data.get('mode') || '沉浸叙事');
-        settings.directorNote = String(data.get('directorNote') || '').trim();
+        const protagonist = String(data.get('protagonist') || '').trim();
+        const castMode = String(data.get('castMode') || 'user');
+        if (castMode === 'custom' && !protagonist) return toast('请填写其他人物的名字', 'info');
+        settings.protagonist = protagonist;
+        settings.castMode = castMode;
+        settings.mode = String(data.get('mode') || 'follow-source');
         settings.continueContext = data.get('continueContext') === 'on';
         settings.beautificationEnabled = data.get('beautificationEnabled') === 'on';
         settings.beautificationMode = data.get('beautificationMode') === 'dynamic' ? 'dynamic' : 'static';
@@ -1510,13 +1736,6 @@ function bindRootEvents(root) {
 }
 
 function addMenuButton() {
-    const sendForm = document.getElementById('leftSendForm');
-    if (sendForm && !document.getElementById('mit-quick-open')) {
-        const quick = document.createElement('button');
-        quick.id = 'mit-quick-open'; quick.type = 'button'; quick.textContent = '剧场';
-        quick.title = '打开无名剧场'; quick.addEventListener('click', openTheatre);
-        sendForm.append(quick);
-    }
     if (document.getElementById(MENU_ID)) return true;
     const menu = document.getElementById('extensionsMenu');
     if (!menu) return false;

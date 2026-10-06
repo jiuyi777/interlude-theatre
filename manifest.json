@@ -1,12 +1,12 @@
 {
   "id": "interlude-theatre",
   "display_name": "无名剧场",
-  "description": "在同一纸页填写要求、生成、编辑、收藏和续写小剧场，点击后才写入聊天。",
+  "description": "读取酒馆角色与世界书创作小剧场，在独立阅读页查看，支持收藏、续写和记录恢复。",
   "loading_order": 120,
   "js": "index.js",
   "css": "style.css",
   "author": "Zeya",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "minimum_client_version": "1.14.0",
   "auto_update": false
 }

@@ -8,7 +8,7 @@ const { indexedDB } = require('fake-indexeddb');
 const dom = new JSDOM('<div id="extensionsMenu"></div><div id="leftSendForm"></div>', { url: 'https://test.invalid/' });
 let active, writes = 0, readback = true;
 const prompts = [], persisted = new Map();
-const sandbox = { window: dom.window, document: dom.window.document, DOMParser: dom.window.DOMParser, Image:dom.window.Image,
+const sandbox = { window: dom.window, document: dom.window.document, DOMParser: dom.window.DOMParser, Image:dom.window.Image, FormData:dom.window.FormData,
     URL, console: { ...console, error() {} }, structuredClone, indexedDB, setTimeout, clearTimeout,
     SillyTavern: { getContext: () => active },
     fetch: async (_url,options) => ({ok:true,json:async()=> readback ? persisted.get(JSON.parse(options.body).file_name || JSON.parse(options.body).id) || [] : []}),
@@ -147,6 +147,7 @@ await run('writeCurrentWork()');
 await run('writeCurrentWork()');
 assert.equal(writes,1);
 assert.equal(active.chat.length,2);
+assert.equal(active.chat.at(-1).name,'角色乙');
 assert.equal(run('session.work.writes.length'),1);
 active = context('角色丙','另一聊天');
 await run('writeCurrentWork()');
@@ -199,5 +200,126 @@ assert.ok(dom.window.document.querySelector('.mit-reader iframe[title="作品阅
 assert.equal(dom.window.document.querySelector('.mit-theatre iframe'),null);
 await run('closeReader()');
 assert.equal(dom.window.document.querySelector('.mit-sheet h2').textContent,'演出记录');
+
+// Imported worldbook entries retain full text, respect selection, and cannot
+// overwrite another book merely because both books use entry uid 0.
+const longEntry = '世界书开头' + '完整剧目'.repeat(4000) + '世界书结尾';
+const bookA = JSON.stringify({entries:{0:{uid:0,comment:'甲书剧目',content:longEntry},1:{uid:1,comment:'默认关闭条目',content:'关闭的条目内容',disable:true}}});
+const bookB = JSON.stringify({entries:{0:{uid:0,comment:'乙书剧目',content:'另一本书的完整剧目'}}});
+sandbox.importFiles = [{name:'甲书.json',size:bookA.length,text:async()=>bookA},{name:'乙书.json',size:bookB.length,text:async()=>bookB}];
+const libraryBeforeImport = run('settings.library.length');
+await run('prepareImportFiles(importFiles)');
+assert.equal(run('settings.library.length'),libraryBeforeImport);
+assert.equal(run('pendingImport.plays.length'),3);
+assert.equal(run('pendingImport.plays[0].prompt'),longEntry);
+assert.equal(run('pendingImport.plays[1].importSelected'),false);
+assert.notEqual(run('pendingImport.plays[0].id'),run('pendingImport.plays[2].id'));
+assert.equal(dom.window.document.querySelector('[data-action="confirm-import"]').textContent,'确认收录 2 个剧目');
+assert.equal(dom.window.document.querySelector('[data-import-index="1"]').checked,false);
+run('commitPendingImport()');
+assert.equal(run('settings.library.length'),libraryBeforeImport+2);
+assert.equal(run("settings.library.find(p=>p.title==='甲书剧目').prompt"),longEntry);
+await run('prepareImportFiles(importFiles)');
+run('commitPendingImport()');
+assert.equal(run('settings.library.length'),libraryBeforeImport+2);
+
+// Defaults and explicit protagonist choices reach the actual generation request.
+active = context('当前卡人物','新的角色聊天');
+assert.equal(run("storyCast(getContext(),{}).name"),'用户');
+assert.equal(run("storyCast(getContext(),{castMode:'character'}).name"),'当前卡人物');
+run("settings.castMode='user'; settings.protagonist=''; settings.mode='follow-source'; showDirector()");
+let director = dom.window.document.querySelector('#mit-director-form');
+assert.equal(director.elements.castMode.value,'user');
+director.elements.castMode.value='custom';
+director.elements.castMode.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+assert.equal(director.querySelector('.mit-custom-cast').hidden,false);
+director.elements.protagonist.value='林舟';
+director.elements.mode.value='follow-source';
+run("settings.settingEntries=[{id:'ending',name:'结局',content:'每篇都写圆满结局',enabled:true}]");
+director.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
+assert.equal(run('newSession().form.protagonist'),'林舟');
+assert.equal(run('newSession().form.castMode'),'custom');
+await run("startPerformance({id:'cast-test',title:'人物与记录测试',prompt:'世界书要求',description:'一场重逢'},'static',false)");
+assert.equal(run('session.work.protagonist'),'林舟');
+assert.match(prompts.at(-1).prompt.at(-2).content,/以「林舟」为主角/);
+assert.match(prompts.at(-1).prompt.at(-2).content,/根据所选剧目、世界书和本篇要求确定叙述方式/);
+assert.match(JSON.stringify(prompts.at(-1).prompt),/每篇都写圆满结局/);
+assert.equal(run('newSession().form.note'),'');
+run("settings.settingEntries[0].enabled=false");
+assert.doesNotMatch(run("JSON.stringify(buildGenerationMessages(getContext(),selectedPlay(),'static',false,settings))"),/每篇都写圆满结局/);
+run("settings.settingEntries[0].enabled=true");
+assert.equal(prompts.at(-1).prompt.at(-1).role,'system');
+assert.equal(writes,beforeNavigationWrites);
+
+// Favorites, trash and restore persist; an old settings record or saved session
+// cannot bring a deleted story back into the visible library after reopening.
+const testWorkId = run('session.work.id');
+sandbox.recordId = testWorkId;
+const toggles = await run("Promise.all([changeSavedWork('favorite-record',recordId),changeSavedWork('favorite-record',recordId)])");
+assert.equal(toggles.filter(Boolean).length,1);
+assert.equal(await run('workStore.get(recordId).then(w=>w.favorite)'),true);
+run("settings.history.push(clone(session.work))");
+await run("changeSavedWork('delete-work',recordId)");
+assert.equal(run('session.work'),null);
+assert.ok(await run('workStore.get(recordId).then(w=>w.deletedAt)'));
+run("workspaceFavorites=false;workspaceTrash=false;showWorks()");
+assert.equal(dom.window.document.querySelector(`[data-action="open-work"][data-entry-id="${testWorkId}"]`),null);
+await run("workStore.put({...session,work:settings.history.at(-1)})");
+run('session=null;worksReady=null');
+await run('ensureWorks()');
+assert.equal(run('session.work'),null);
+assert.ok(run('works.find(w=>w.id===recordId).deletedAt'));
+run('workspaceTrash=true;showWorks()');
+assert.ok(dom.window.document.querySelector(`[data-action="restore-work"][data-entry-id="${testWorkId}"]`));
+await run("changeSavedWork('restore-work',recordId)");
+run('workspaceTrash=false;workspaceFavorites=true;showWorks()');
+assert.ok(dom.window.document.querySelector(`[data-action="open-work"][data-entry-id="${testWorkId}"]`));
+assert.equal(await run('workStore.get(recordId).then(w=>w.favorite)'),true);
+run("originalStore=workStore;workStore={...workStore,put:async()=>{throw Error('quota')}}");
+assert.equal(await run("changeSavedWork('delete-work',recordId)"),false);
+assert.equal(Boolean(run('works.find(w=>w.id===recordId).deletedAt')),false);
+run('workStore=originalStore');
+
+// Upgrading the default for new stories must preserve the protagonist of a
+// saved story, both when restoring its session and when opening it for a sequel.
+run("settings.castMode='user'; settings.protagonist=''; settings.mode='follow-source'");
+run("legacyWork=clone(works.find(w=>w.id===recordId)); legacyWork.id='legacy-cast'; legacyWork.protagonist='旧故事主角'; delete legacyWork.form.castMode; delete legacyWork.form.protagonist");
+await run('workStore.put(legacyWork)');
+await run("workStore.put({...newSession(null),work:legacyWork,form:legacyWork.form})");
+run('session=null;worksReady=null');
+await run('ensureWorks()');
+assert.equal(run('session.form.castMode'),'custom');
+assert.equal(run('session.form.protagonist'),'旧故事主角');
+run("session=newSession(null); theatrePage='history'; readerOpen=false; showWorks()");
+await run("handleWorkspaceAction('open-work',{dataset:{entryId:'legacy-cast'}})");
+run("session.sequel='为旧故事续写一个圆满的结局'");
+await run('runWorkspace(true)');
+assert.match(prompts.at(-1).prompt.at(-2).content,/以「旧故事主角」为主角/);
+assert.equal(run('session.work.chapters.length'),2);
+assert.equal(run('newSession(null).form.castMode'),'user');
 run('closeTheatre()');
-console.log('PASS: full untruncated character/chat/sequel context, enabled preset/worldbook sources, AI-owned CSS, generation isolation, HTML isolation, persistence, sequel preservation, explicit chat writes and navigation.');
+// Migration is idempotent; entry switches survive rehydration and govern real requests.
+active = context('条目测试人物','上下文');
+run("getContext().extensionSettings[SETTINGS_KEY]={...clone(DEFAULT_SETTINGS),directorNote:'旧默认要求'}; hydrateSettings(); hydrateSettings()");
+assert.equal(run('settings.settingEntries.length'),1);
+assert.equal(run('settings.settingEntries[0].content'),'旧默认要求');
+assert.equal(run("migrateStoryForm({note:'旧默认要求'}).note"),'');
+assert.equal(run("migrateStoryForm({note:'独立单篇要求'}).note"),'独立单篇要求');
+assert.equal(run("migrateStoryForm({note:'旧默认要求',settingEntriesVersion:1}).note"),'旧默认要求');
+run('showDirector()');
+const entrySwitch = dom.window.document.querySelector('[data-setting-field="enabled"]');
+entrySwitch.checked=false;
+entrySwitch.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+run('hydrateSettings(); showDirector()');
+assert.equal(dom.window.document.querySelector('[data-setting-field="enabled"]').checked,false);
+await run("startPerformance({id:'entries',title:'关闭条目',description:'重逢',prompt:'故事'},'static',false)");
+assert.doesNotMatch(JSON.stringify(prompts.at(-1)),/旧默认要求/);
+run("settings.settingEntries[0].enabled=true; settings.settingEntries[0].content='{{char}}的完整设定';");
+await run("startPerformance({id:'entries',title:'续写条目',description:'重逢',prompt:'故事'},'static',false,{previousWork:clone(session.work),sequel:'继续',directorNote:'本篇要求'})");
+assert.match(JSON.stringify(prompts.at(-1)),/条目测试人物的完整设定/);
+assert.match(JSON.stringify(prompts.at(-1)),/本篇要求/);
+assert.match(prompts.at(-1).prompt.at(-1).content,/最终阅读设计要求/);
+run("settings.settingEntries[0].enabled=false");
+await run("startPerformance({id:'entries',title:'续写关闭条目',description:'重逢',prompt:'故事'},'static',false,{previousWork:clone(session.work),sequel:'继续'})");
+assert.doesNotMatch(JSON.stringify(prompts.at(-1)),/条目测试人物的完整设定/);
+console.log('PASS: full context and D0, worldbook selection and full-text import, explicit protagonist and writing preferences, persistent favorites/trash/restore, storage failures, generation isolation, reader and chat-write regressions.');
